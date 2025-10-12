@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
         $user = User::firstOrCreate(
             ['email' => 'admin@centinela360.com'],
             [
-                'name' => 'Wilder Chiquiza',
+                'name' => 'Wilder Rivera',
                 'password' => Hash::make('12345678'),
                 'company_id' => $company->id ?? null,
                 'active' => true,
