@@ -24,28 +24,16 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Rutas de perfil del usuario autenticado
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-
-Route::middleware(['auth', 'role:Supervisor'])->get('/supervisor', function () {
-    return 'Bienvenido al Panel del Supervisor';
-});
-
-// 🧱 Rutas protegidas por permisos
-Route::middleware(['auth', 'permission:manage_users'])->get('/users', function () {
-    return 'Gestión de usuarios';
-});
-
-Route::middleware(['auth', 'permission:ver-reportes'])->get('/reportes', function () {
-    return 'Tienes permiso para ver reportes';
-});
+//Route::middleware('auth')->group(function () {
+    //Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+   // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+   // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+//});
 
 // Autenticación (Laravel Breeze / Jetstream)
 require __DIR__.'/auth.php';
 
 require __DIR__.'/admin.php';
 require __DIR__.'/company.php';
+
+

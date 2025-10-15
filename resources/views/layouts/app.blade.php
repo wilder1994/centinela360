@@ -131,7 +131,7 @@
             <nav>
                 <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">🏠 Dashboard</a>
                 <a href="{{ route('admin.companies.index') }}" class="{{ request()->routeIs('admin.companies.index') ? 'active' : '' }}">🏢 Empresas</a>
-                <a href="#">👥 Usuarios</a>
+                <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.index') ? 'active' : '' }}">👥 Usuarios</a>
                 <a href="#">📊 Reportes</a>
                 <a href="#">⚙️ Configuración</a>
             </nav>
