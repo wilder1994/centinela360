@@ -33,7 +33,7 @@
                 @error('password') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
             </div>
 
-            <!-- Confirmar -->
+            <!-- Confirmar contraseña -->
             <div>
                 <label class="block text-gray-700 text-sm font-medium">Confirmar contraseña</label>
                 <input type="password" name="password_confirmation"
@@ -78,7 +78,7 @@
             <!-- Estado -->
             <div>
                 <label class="flex items-center mt-4 space-x-2">
-                    <input type="checkbox" name="active" {{ $user->active ? 'checked' : '' }}
+                    <input type="checkbox" name="active" value="1" {{ $user->active ? 'checked' : '' }}
                         class="rounded border-gray-300 text-cyan-600 focus:ring-cyan-500">
                     <span class="text-gray-700 text-sm">Usuario activo</span>
                 </label>
@@ -91,13 +91,14 @@
                 @if ($user->photo)
                     <div class="mb-3">
                         <img src="{{ asset('storage/'.$user->photo) }}" alt="Foto actual"
-                             class="w-24 h-24 rounded-full object-cover border border-gray-300">
+                             class="w-24 h-24 rounded-full object-cover border border-gray-300" id="currentPhoto">
                     </div>
                 @endif
 
                 <input type="file" name="photo" accept="image/*" onchange="previewPhoto(event)"
                     class="block w-full text-sm text-gray-700 border-gray-300 rounded-lg cursor-pointer focus:ring-cyan-500 focus:border-cyan-500">
-                <img id="photoPreview" class="mt-4 w-24 h-24 rounded-full object-cover hidden">
+
+                <img id="photoPreview" class="mt-4 w-24 h-24 rounded-full object-cover hidden border border-gray-300">
             </div>
         </div>
 
@@ -113,6 +114,8 @@
 <script>
 function previewPhoto(event) {
     const output = document.getElementById('photoPreview');
+    const current = document.getElementById('currentPhoto');
+    if (current) current.classList.add('hidden');
     output.src = URL.createObjectURL(event.target.files[0]);
     output.classList.remove('hidden');
 }

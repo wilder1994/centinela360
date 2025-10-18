@@ -50,7 +50,6 @@ class UserController extends Controller
             'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // Subida de imagen
         $photoPath = null;
         if ($request->hasFile('photo')) {
             $photoPath = $request->file('photo')->store('users/photos', 'public');
@@ -62,7 +61,7 @@ class UserController extends Controller
             'password' => Hash::make($validated['password']),
             'phone' => $validated['phone'] ?? null,
             'company_id' => $validated['company_id'] ?? null,
-            'active' => $validated['active'] ?? true,
+            'active' => $request->boolean('active'),
             'photo' => $photoPath,
         ]);
 
@@ -77,13 +76,10 @@ class UserController extends Controller
     {
         $roles = Role::orderBy('name')->get();
         $companies = Company::orderBy('name')->get();
-
-        // Especifica las columnas para evitar ambigüedad
-        $userRoles = $user->roles()->pluck('roles.id')->toArray(); // Especifica la columna 'roles.id' explícitamente
+        $userRoles = $user->roles()->pluck('roles.id')->toArray();
 
         return view('admin.users.edit', compact('user', 'roles', 'userRoles', 'companies'));
     }
-
 
     public function update(Request $request, User $user)
     {
@@ -98,32 +94,41 @@ class UserController extends Controller
             'company_id' => 'nullable|exists:companies,id',
             'roles' => 'nullable|array',
             'roles.*' => 'integer|exists:roles,id',
-            'active' => 'boolean',
+            'active' => 'nullable|boolean',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // Actualizar foto si se envía una nueva
+        // 🔹 Guardar foto actual o reemplazar si hay nueva
+        $photoPath = $user->photo;
+
         if ($request->hasFile('photo')) {
-            if ($user->photo && Storage::disk('public')->exists($user->photo)) {
-                Storage::disk('public')->delete($user->photo);
+            // eliminar foto anterior
+            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
+                Storage::disk('public')->delete($photoPath);
             }
-            $user->photo = $request->file('photo')->store('users/photos', 'public');
+
+            // guardar nueva
+            $photoPath = $request->file('photo')->store('users/photos', 'public');
         }
 
+        // 🔹 Actualizar datos generales
         $user->fill([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? $user->phone,
-            'company_id' => $validated['company_id'] ?? $user->company_id,
-            'active' => $validated['active'] ?? $user->active,
+            'phone' => $validated['phone'] ?? null,
+            'company_id' => $validated['company_id'] ?? null,
+            'active' => $request->boolean('active'),
+            'photo' => $photoPath,
         ]);
 
+        // 🔹 Actualizar contraseña si se envía una nueva
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
         }
 
         $user->save();
 
+        // 🔹 Actualizar roles
         $user->roles()->sync($validated['roles'] ?? []);
 
         return redirect()->route('admin.users.index')->with('success', 'Usuario actualizado correctamente.');
@@ -131,10 +136,12 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        // 🧹 Eliminar foto del almacenamiento
         if ($user->photo && Storage::disk('public')->exists($user->photo)) {
             Storage::disk('public')->delete($user->photo);
         }
 
+        // Eliminar relaciones y usuario
         $user->roles()->sync([]);
         $user->delete();
 
