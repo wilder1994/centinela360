@@ -53,6 +53,8 @@ Route::get('/redirect', function () {
     return redirect('/dashboard');
 })->middleware('auth')->name('redirect');
 
+Route::view('/company/programming', 'company.programming.index')->name('company.programming.index');
+
 // ⚙️ Archivos de rutas específicas
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';

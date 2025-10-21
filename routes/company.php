@@ -9,3 +9,4 @@ Route::middleware(['auth', 'role:Admin Empresa'])
     ->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     });
+Route::view('/company/programming', 'company.programming.index')->name('company.programming.index');
