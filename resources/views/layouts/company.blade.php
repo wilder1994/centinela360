@@ -57,10 +57,28 @@
                 Supervisión
             </a>
 
-            <a href="#">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.25c-4.28 0-7.75 1.57-7.75 3.5v12.5c0 1.93 3.47 3.5 7.75 3.5s7.75-1.57 7.75-3.5V5.75c0-1.93-3.47-3.5-7.75-3.5Z"/></svg>
-                Base de Datos
-            </a>
+            <!-- Base de Datos -->
+            <div class="mt-4">
+                <p class="text-xs text-gray-400 uppercase px-6">Base de Datos</p>
+
+                <a href="{{ route('company.employees.index') }}"
+                class="flex items-center gap-3 px-6 py-3 mt-2 {{ request()->routeIs('company.employees.*') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16.5 6a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z"/>
+                        <path d="M3.75 20.1a8.25 8.25 0 0 1 16.5 0v.65a.75.75 0 0 1-.75.75h-15a.75.75 0 0 1-.75-.75v-.65Z"/>
+                    </svg>
+                    Empleados
+                </a>
+
+                <a href="{{ route('company.clients.index') }}"
+                class="flex items-center gap-3 px-6 py-3 mt-2 {{ request()->routeIs('company.clients.*') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3.75 20.1a8.25 8.25 0 0 1 16.5 0v.65a.75.75 0 0 1-.75.75h-15a.75.75 0 0 1-.75-.75v-.65Z"/>
+                        <path d="M12 2.25c-4.28 0-7.75 1.57-7.75 3.5v12.5c0 1.93 3.47 3.5 7.75 3.5s7.75-1.57 7.75-3.5V5.75c0-1.93-3.47-3.5-7.75-3.5Z"/>
+                    </svg>
+                    Clientes
+                </a>
+            </div>
 
             <a href="#">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 6a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z"/><path d="M3.75 20.1a8.25 8.25 0 0 1 16.5 0v.65a.75.75 0 0 1-.75.75h-15a.75.75 0 0 1-.75-.75v-.65Z"/></svg>
