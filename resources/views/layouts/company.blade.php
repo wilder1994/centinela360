@@ -85,7 +85,7 @@
                 Usuarios
             </a>
 
-            <a href="#">
+            <a href="{{ route('company.memorandos.index') }}" class="{{ request()->routeIs('company.memorandos.*') ? 'active' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M11.7 2.336a.75.75 0 0 1 .6 0l8.25 3.6a.75.75 0 0 1 0 1.38l-8.25 3.6a.75.75 0 0 1-.6 0l-8.25-3.6a.75.75 0 0 1 0-1.38l8.25-3.6Z"/><path d="M3.4 10.755a.75.75 0 0 1 1.02-.36l7.63 3.33a.75.75 0 0 1 0 1.35l-7.63 3.33a.75.75 0 0 1-1.02-.36 8.1 8.1 0 0 1 0-7.95Z"/><path d="M19.58 10.395a.75.75 0 0 1 .97.36 8.1 8.1 0 0 1 0 7.95.75.75 0 0 1-.97.36l-7.63-3.33a.75.75 0 0 1 0-1.35l7.63-3.33Z"/></svg>
                 Procesos
             </a>
