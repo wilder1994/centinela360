@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Company\DashboardController;
+use App\Http\Controllers\Company\MemorandumController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +54,13 @@ Route::middleware(['auth', 'role:Admin Empresa'])
             Route::get('/{client}/edit', function ($client) {
                 return view('company.clients.edit', compact('client'));
             })->name('edit');
+        });
+
+        // ---- MEMORÁNDUMS ----
+        Route::prefix('memorandums')->name('memorandums.')->group(function () {
+            Route::get('/', [MemorandumController::class, 'index'])->name('index');
+            Route::get('/create', [MemorandumController::class, 'create'])->name('create');
+            Route::post('/', [MemorandumController::class, 'store'])->name('store');
         });
 
         // Aquí puedes adicionar más secciones del panel de empresa en el futuro...
