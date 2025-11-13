@@ -14,6 +14,7 @@ class UserSeeder extends Seeder
     {
         $company = Company::first();
         $superAdminRole = Role::where('name', 'Super Admin')->first();
+        $companyAdminRole = Role::where('name', 'Admin Empresa')->first();
 
         $user = User::firstOrCreate(
             ['email' => 'admin@centinela360.com'],
@@ -25,6 +26,13 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $user->roles()->syncWithoutDetaching([$superAdminRole->id]);
+        $roleIds = collect([$superAdminRole?->id, $companyAdminRole?->id])
+            ->filter()
+            ->unique()
+            ->all();
+
+        if (!empty($roleIds)) {
+            $user->roles()->syncWithoutDetaching($roleIds);
+        }
     }
 }

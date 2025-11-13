@@ -14,11 +14,16 @@ class StoreMemorandumRequest extends FormRequest
 
     public function rules(): array
     {
+        $statuses = implode(',', Memorandum::statuses());
+
         return [
-            'title' => ['required', 'string', 'max:255'],
+            'subject' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string'],
-            'responsible_id' => ['required', 'exists:users,id'],
-            'status' => ['nullable', 'in:' . implode(',', Memorandum::STATUSES)],
+            'employee_id' => ['nullable', 'exists:employees,id'],
+            'issued_at' => ['nullable', 'date'],
+            'status' => ['nullable', 'in:' . $statuses],
+            'acknowledged_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

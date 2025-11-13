@@ -14,9 +14,11 @@ class UpdateMemorandumStatusRequest extends FormRequest
 
     public function rules(): array
     {
+        $statuses = implode(',', Memorandum::statuses());
+
         return [
-            'status' => ['required', 'in:' . implode(',', Memorandum::STATUSES)],
-            'notes' => ['nullable', 'string'],
+            'status' => ['required', 'in:' . $statuses],
+            'notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 }
