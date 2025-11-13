@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Memorandum;
+use App\Enums\MemorandumStatus;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateMemorandumRequest extends FormRequest
@@ -14,11 +14,16 @@ class UpdateMemorandumRequest extends FormRequest
 
     public function rules(): array
     {
+        $statuses = implode(',', array_map(fn (MemorandumStatus $status) => $status->value, MemorandumStatus::cases()));
+
         return [
-            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'subject' => ['sometimes', 'required', 'string', 'max:255'],
             'body' => ['sometimes', 'required', 'string'],
-            'responsible_id' => ['sometimes', 'required', 'exists:users,id'],
-            'status' => ['sometimes', 'required', 'in:' . implode(',', Memorandum::STATUSES)],
+            'employee_id' => ['sometimes', 'nullable', 'exists:employees,id'],
+            'issued_at' => ['sometimes', 'nullable', 'date'],
+            'status' => ['sometimes', 'required', 'in:' . $statuses],
+            'acknowledged_at' => ['sometimes', 'nullable', 'date'],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:500'],
         ];
     }
 }
