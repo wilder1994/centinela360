@@ -26,6 +26,11 @@ class MemorandumStatusHistory extends Model
         'to_status' => MemorandumStatus::class,
     ];
 
+    protected $casts = [
+        'from_status' => MemorandumStatus::class,
+        'to_status' => MemorandumStatus::class,
+    ];
+
     public function memorandum(): BelongsTo
     {
         return $this->belongsTo(Memorandum::class);

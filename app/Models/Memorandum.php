@@ -15,14 +15,6 @@ class Memorandum extends Model
 {
     use HasFactory;
 
-    /**
-     * Laravel pluralizes "Memorandum" as "memorandums" by default, but our
-     * migrations create the table using the latin plural form "memoranda".
-     * Explicitly set the table name so queries hit the correct relation and
-     * the listing views receive data instead of failing silently.
-     */
-    protected $table = 'memoranda';
-
     public const STATUSES = [
         MemorandumStatus::DRAFT->value,
         MemorandumStatus::IN_REVIEW->value,
