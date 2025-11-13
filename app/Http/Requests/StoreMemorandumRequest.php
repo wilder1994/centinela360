@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Memorandum;
+use App\Enums\MemorandumStatus;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMemorandumRequest extends FormRequest
@@ -14,7 +14,7 @@ class StoreMemorandumRequest extends FormRequest
 
     public function rules(): array
     {
-        $statuses = implode(',', Memorandum::statuses());
+        $statuses = implode(',', array_map(fn (MemorandumStatus $status) => $status->value, MemorandumStatus::cases()));
 
         return [
             'subject' => ['required', 'string', 'max:255'],
