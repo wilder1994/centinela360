@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->unsignedBigInteger('employee_id')->nullable();
+            $table->foreignId('employee_id')->nullable()->constrained()->nullOnDelete();
             $table->string('subject');
             $table->text('body');
             $table->string('status', 50)->default(MemorandumStatus::DRAFT->value);
@@ -22,6 +22,7 @@ return new class extends Migration {
 
             $table->index('status');
             $table->index('employee_id');
+            $table->index('issued_at');
         });
     }
 

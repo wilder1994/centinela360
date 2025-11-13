@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('changed_by')->constrained('users')->cascadeOnDelete();
             $table->text('notes')->nullable();
             $table->timestamps();
+
+            $table->index(['memorandum_id', 'created_at']);
         });
     }
 

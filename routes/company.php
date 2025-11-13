@@ -25,14 +25,6 @@ Route::middleware(['auth', 'role:Admin Empresa'])
         // Programming (vista simple) - queda dentro del mismo grupo, por eso la ruta será /company/programming
         Route::view('programming', 'company.programming.index')->name('programming.index');
 
-        // Memorandos
-        Route::resource('memorandos', MemorandumController::class)
-            ->only(['index', 'show']);
-
-        Route::post('memorandos', [MemorandumController::class, 'store'])->name('memorandos.store');
-        Route::match(['put', 'patch'], 'memorandos/{memorandum}', [MemorandumController::class, 'update'])->name('memorandos.update');
-        Route::post('memorandos/{memorandum}/status', [MemorandumController::class, 'updateStatus'])->name('memorandos.status');
-
         // ---- BASE DE DATOS - EMPLEADOS (vistas estáticas por ahora) ----
         Route::prefix('employees')->name('employees.')->group(function () {
             Route::get('/', function () {
@@ -69,6 +61,10 @@ Route::middleware(['auth', 'role:Admin Empresa'])
             Route::get('/', [MemorandumController::class, 'index'])->name('index');
             Route::get('/create', [MemorandumController::class, 'create'])->name('create');
             Route::post('/', [MemorandumController::class, 'store'])->name('store');
+            Route::get('/{memorandum}', [MemorandumController::class, 'show'])->name('show');
+            Route::get('/{memorandum}/edit', [MemorandumController::class, 'edit'])->name('edit');
+            Route::put('/{memorandum}', [MemorandumController::class, 'update'])->name('update');
+            Route::post('/{memorandum}/status', [MemorandumController::class, 'updateStatus'])->name('status');
         });
 
         // Aquí puedes adicionar más secciones del panel de empresa en el futuro...
