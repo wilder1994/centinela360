@@ -1,105 +1,80 @@
 @extends('layouts.company')
 
 @section('content')
-<div class="space-y-8">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+<div class="animate-fadeIn space-y-6">
+    <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-gray-800">Memorandos</h1>
-            <p class="text-sm text-gray-500">Gestiona los memorandos de tu organización.</p>
+            <p class="text-sm text-gray-500">Seguimiento y trazabilidad de los memorandos generados en la compañía.</p>
         </div>
+        <a href="{{ route('company.memorandos.create') }}" class="bg-[var(--primary)] text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition-colors">
+            + Nuevo memorando
+        </a>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-1">
-            <div class="bg-white shadow rounded-xl p-6 space-y-4">
-                <h2 class="text-lg font-semibold text-gray-700">Crear memorando</h2>
-                @if ($errors->any())
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                        <ul class="list-disc list-inside text-sm">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-                <form action="{{ route('company.memorandos.store') }}" method="POST" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label for="title" class="block text-sm font-medium text-gray-700">Título</label>
-                        <input type="text" id="title" name="title" value="{{ old('title') }}"
-                               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[var(--primary)] focus:ring focus:ring-[var(--primary)] focus:ring-opacity-50" required>
-                    </div>
-                    <div>
-                        <label for="body" class="block text-sm font-medium text-gray-700">Descripción</label>
-                        <textarea id="body" name="body" rows="4" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[var(--primary)] focus:ring focus:ring-[var(--primary)] focus:ring-opacity-50" required>{{ old('body') }}</textarea>
-                    </div>
-                    <div>
-                        <label for="responsible_id" class="block text-sm font-medium text-gray-700">Responsable</label>
-                        <select id="responsible_id" name="responsible_id" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[var(--primary)] focus:ring focus:ring-[var(--primary)] focus:ring-opacity-50" required>
-                            <option value="">Selecciona un responsable</option>
-                            @foreach ($responsibles as $id => $name)
-                                <option value="{{ $id }}" @selected(old('responsible_id') == $id)>{{ $name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700">Estado inicial</label>
-                        <select id="status" name="status" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-[var(--primary)] focus:ring focus:ring-[var(--primary)] focus:ring-opacity-50">
-                            <option value="">Borrador (por defecto)</option>
-                            @foreach (\App\Models\Memorandum::STATUSES as $status)
-                                <option value="{{ $status }}" @selected(old('status') == $status)>{{ __(ucfirst(str_replace('_', ' ', $status))) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[var(--primary)] hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary)]">
-                        Crear memorando
-                    </button>
-                </form>
+    <div class="bg-white rounded-xl shadow">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 border-b border-gray-100">
+            <form action="#" method="GET" class="flex items-center gap-2">
+                <label for="search" class="sr-only">Buscar</label>
+                <input id="search" type="text" name="search" placeholder="Buscar memorando" class="w-64 rounded-lg border-gray-300 focus:border-[var(--primary)] focus:ring-[var(--primary)]">
+                <button type="submit" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">Buscar</button>
+            </form>
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+                <span class="px-3 py-1 rounded-full bg-blue-50 text-[var(--primary)]">En seguimiento</span>
+                <span class="px-3 py-1 rounded-full bg-green-50 text-green-600">Cerrado</span>
             </div>
         </div>
-        <div class="lg:col-span-2">
-            <div class="bg-white shadow rounded-xl overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Responsable</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creado</th>
-                            <th scope="col" class="px-6 py-3"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse ($memorandums as $memorandum)
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">{{ $memorandum->title }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-500">{{ $memorandum->responsible?->name }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-blue-100 text-blue-800">
-                                        {{ __(ucfirst(str_replace('_', ' ', $memorandum->status))) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $memorandum->created_at->format('d/m/Y H:i') }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="{{ route('company.memorandos.show', $memorandum) }}" class="text-[var(--primary)] hover:text-[var(--primary-dark)]">Ver detalle</a>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No hay memorandos registrados.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
 
-            <div class="mt-4">
-                {{ $memorandums->links() }}
-            </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Código</th>
+                        <th class="px-4 py-3 text-left">Colaborador</th>
+                        <th class="px-4 py-3 text-left">Asunto</th>
+                        <th class="px-4 py-3 text-center">Estado</th>
+                        <th class="px-4 py-3 text-center">Creado</th>
+                        <th class="px-4 py-3 text-center">Adjuntos</th>
+                        <th class="px-4 py-3 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-700">
+                    <tr class="border-t">
+                        <td class="px-4 py-3 font-medium text-gray-800">MEM-2024-023</td>
+                        <td class="px-4 py-3">Juan Pérez</td>
+                        <td class="px-4 py-3">Incumplimiento de protocolos de seguridad</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-1 rounded-full bg-yellow-100 text-yellow-600 text-xs font-semibold">En revisión</span>
+                        </td>
+                        <td class="px-4 py-3 text-center">12 Mar 2024</td>
+                        <td class="px-4 py-3 text-center">
+                            <a href="{{ Storage::url('memorandos/MEM-2024-023.pdf') }}" class="text-[var(--primary)] hover:underline">PDF</a>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <a href="{{ route('company.memorandos.show', 23) }}" class="text-[var(--primary)] hover:underline">Ver</a>
+                            <span class="text-gray-300 mx-1">|</span>
+                            <a href="{{ route('company.memorandos.edit', 23) }}" class="text-[var(--primary)] hover:underline">Editar</a>
+                        </td>
+                    </tr>
+                    <tr class="border-t">
+                        <td class="px-4 py-3 font-medium text-gray-800">MEM-2024-018</td>
+                        <td class="px-4 py-3">Laura Rodríguez</td>
+                        <td class="px-4 py-3">Reconocimiento por desempeño destacado</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-1 rounded-full bg-green-100 text-green-600 text-xs font-semibold">Cerrado</span>
+                        </td>
+                        <td class="px-4 py-3 text-center">05 Mar 2024</td>
+                        <td class="px-4 py-3 text-center">
+                            <a href="{{ Storage::url('memorandos/MEM-2024-018.pdf') }}" class="text-[var(--primary)] hover:underline">PDF</a>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <a href="{{ route('company.memorandos.show', 18) }}" class="text-[var(--primary)] hover:underline">Ver</a>
+                            <span class="text-gray-300 mx-1">|</span>
+                            <a href="{{ route('company.memorandos.edit', 18) }}" class="text-[var(--primary)] hover:underline">Editar</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

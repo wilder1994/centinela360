@@ -1,23 +1,27 @@
 <?php
 
+use App\Enums\MemorandumStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('memorandums', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
-            $table->string('title');
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('employee_id')->nullable();
+            $table->string('subject');
             $table->text('body');
-            $table->enum('status', ['draft', 'in_review', 'approved', 'archived'])->default('draft');
-            $table->foreignId('responsible_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('status', 50)->default(MemorandumStatus::DRAFT->value);
+            $table->timestamp('issued_at')->nullable();
+            $table->timestamp('acknowledged_at')->nullable();
             $table->timestamps();
+
+            $table->index('status');
+            $table->index('employee_id');
         });
     }
 

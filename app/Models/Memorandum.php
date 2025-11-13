@@ -2,35 +2,31 @@
 
 namespace App\Models;
 
+use App\Enums\MemorandumStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Memorandum extends Model
 {
     use HasFactory;
 
-    public const STATUS_DRAFT = 'draft';
-    public const STATUS_IN_REVIEW = 'in_review';
-    public const STATUS_APPROVED = 'approved';
-    public const STATUS_ARCHIVED = 'archived';
-
-    public const STATUSES = [
-        self::STATUS_DRAFT,
-        self::STATUS_IN_REVIEW,
-        self::STATUS_APPROVED,
-        self::STATUS_ARCHIVED,
-    ];
-
     protected $fillable = [
         'company_id',
-        'title',
+        'user_id',
+        'employee_id',
+        'subject',
         'body',
         'status',
-        'responsible_id',
-        'created_by',
-        'updated_by',
+        'issued_at',
+        'acknowledged_at',
+    ];
+
+    protected $casts = [
+        'issued_at' => 'datetime',
+        'acknowledged_at' => 'datetime',
+        'status' => MemorandumStatus::class,
     ];
 
     public function company(): BelongsTo
@@ -38,23 +34,18 @@ class Memorandum extends Model
         return $this->belongsTo(Company::class);
     }
 
-    public function responsible(): BelongsTo
+    public function author(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'responsible_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function creator(): BelongsTo
+    public function employee(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(Employee::class);
     }
 
-    public function updater(): BelongsTo
+    public function scopeStatus(Builder $query, MemorandumStatus $status): Builder
     {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    public function statusHistories(): HasMany
-    {
-        return $this->hasMany(MemorandumStatusHistory::class)->orderByDesc('created_at');
+        return $query->where('status', $status->value);
     }
 }

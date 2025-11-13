@@ -64,6 +64,13 @@ Route::middleware(['auth', 'role:Admin Empresa'])
             })->name('edit');
         });
 
+        // ---- MEMORÁNDUMS ----
+        Route::prefix('memorandums')->name('memorandums.')->group(function () {
+            Route::get('/', [MemorandumController::class, 'index'])->name('index');
+            Route::get('/create', [MemorandumController::class, 'create'])->name('create');
+            Route::post('/', [MemorandumController::class, 'store'])->name('store');
+        });
+
         // Aquí puedes adicionar más secciones del panel de empresa en el futuro...
 
     });
