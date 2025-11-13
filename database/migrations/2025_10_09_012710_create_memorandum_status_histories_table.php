@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('memorandum_status_histories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('memorandum_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('memorandum_id')->constrained('memoranda')->cascadeOnDelete();
             $table->enum('from_status', ['draft', 'in_review', 'approved', 'archived'])->nullable();
             $table->enum('to_status', ['draft', 'in_review', 'approved', 'archived']);
             $table->foreignId('changed_by')->constrained('users')->cascadeOnDelete();
