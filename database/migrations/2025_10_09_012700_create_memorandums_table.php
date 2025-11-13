@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('memorandums', function (Blueprint $table) {
+        Schema::create('memoranda', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->unsignedBigInteger('employee_id')->nullable();
+            $table->foreignId('employee_id')->nullable()->constrained()->nullOnDelete();
             $table->string('subject');
             $table->text('body');
             $table->string('status', 50)->default(MemorandumStatus::DRAFT->value);
@@ -22,11 +22,12 @@ return new class extends Migration {
 
             $table->index('status');
             $table->index('employee_id');
+            $table->index('issued_at');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('memorandums');
+        Schema::dropIfExists('memoranda');
     }
 };

@@ -10,12 +10,14 @@ return new class extends Migration
     {
         Schema::create('memorandum_status_histories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('memorandum_id')->constrained()->cascadeOnDelete();
-            $table->enum('from_status', ['draft', 'in_review', 'approved', 'archived'])->nullable();
-            $table->enum('to_status', ['draft', 'in_review', 'approved', 'archived']);
+            $table->foreignId('memorandum_id')->constrained('memoranda')->cascadeOnDelete();
+            $table->string('from_status', 50)->nullable();
+            $table->string('to_status', 50);
             $table->foreignId('changed_by')->constrained('users')->cascadeOnDelete();
             $table->text('notes')->nullable();
             $table->timestamps();
+
+            $table->index(['memorandum_id', 'created_at']);
         });
     }
 
