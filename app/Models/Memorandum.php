@@ -15,45 +15,12 @@ class Memorandum extends Model
 {
     use HasFactory;
 
-    /**
-     * Laravel pluralizes "Memorandum" as "memorandums" by default, but our
-     * migrations create the table using the latin plural form "memoranda".
-     * Explicitly set the table name so queries hit the correct relation and
-     * the listing views receive data instead of failing silently.
-     */
-    protected $table = 'memoranda';
-
-    public const STATUS_DRAFT = 'draft';
-    public const STATUS_IN_REVIEW = 'in_review';
-    public const STATUS_ACKNOWLEDGED = 'acknowledged';
-    public const STATUS_ARCHIVED = 'archived';
-
-    /**
-     * Backwards compatible list of available statuses.
-     *
-     * Some seeders and legacy helpers still rely on the old `STATUSES`
-     * constant.  Keeping it here—but expressed in terms of scalar
-     * constants—ensures we avoid evaluating enum values during class loading
-     * while continuing to support the previous access pattern.
-     */
     public const STATUSES = [
-        self::STATUS_DRAFT,
-        self::STATUS_IN_REVIEW,
-        self::STATUS_ACKNOWLEDGED,
-        self::STATUS_ARCHIVED,
+        MemorandumStatus::DRAFT->value,
+        MemorandumStatus::IN_REVIEW->value,
+        MemorandumStatus::ACKNOWLEDGED->value,
+        MemorandumStatus::ARCHIVED->value,
     ];
-
-    /**
-     * Return the available statuses as plain strings.
-     *
-     * Using a method keeps evaluation at runtime so PHP does not attempt to
-     * resolve enum values while compiling constants—preventing fatal errors
-     * during commands like `artisan migrate:fresh --seed`.
-    */
-    public static function statuses(): array
-    {
-        return self::STATUSES;
-    }
 
     protected $fillable = [
         'company_id',
