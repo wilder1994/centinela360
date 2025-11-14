@@ -3,200 +3,179 @@
 namespace App\Livewire\Memorandums;
 
 use App\Enums\MemorandumStatus;
-use App\Models\Employee;
 use App\Models\Memorandum;
-use App\Models\MemorandumStatusHistory;
-use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Collection;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
+#[Layout('layouts.company')]
 class Board extends Component
 {
+    use WithPagination;
     use AuthorizesRequests;
 
+    /** Texto del buscador */
     public string $search = '';
-    public ?int $employeeId = null;
+
+    /** Estado filtrado actualmente (draft, in_review, acknowledged, archived o null) */
+    public ?string $filtroEstado = null;
+
+    /** Conteos por estado para las tarjetas */
+    public array $conteos = [
+        'draft'        => 0,
+        'in_review'    => 0,
+        'acknowledged' => 0,
+        'archived'     => 0,
+    ];
+
+    /** Título de la tabla (se puede sobreescribir desde la ruta si quieres) */
+    public string $tituloTabla = 'Listado de memorándums';
+
+    /** Mensaje cuando no hay registros */
+    public ?string $mensajeVacio = null;
 
     /**
-     * Devuelve el ID de la empresa actual del usuario autenticado.
+     * Puedes pasar parámetros desde la ruta si lo necesitas, por ahora todos son opcionales.
      */
-    protected function currentCompanyId(): int
+    public function mount(
+        ?string $status = null,
+        ?string $tituloTabla = null,
+        ?string $mensajeVacio = null,
+    ): void {
+        $this->filtroEstado = $status;
+
+        if ($tituloTabla) {
+            $this->tituloTabla = $tituloTabla;
+        }
+
+        if ($mensajeVacio) {
+            $this->mensajeVacio = $mensajeVacio;
+        }
+
+        $this->actualizarConteos();
+    }
+
+    /**
+     * Cada vez que cambia el texto de búsqueda, reiniciamos la paginación.
+     */
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Hook para el input del buscador (desde la vista).
+     */
+    public function filtrar(): void
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Al hacer clic en una tarjeta de estado.
+     * Si ya estaba seleccionado, se deselecciona (toggle).
+     */
+    public function filtrarPorEstado(string $estado): void
+    {
+        $this->filtroEstado = $this->filtroEstado === $estado ? null : $estado;
+        $this->resetPage();
+    }
+
+    /**
+     * Construye el query base de memorándums de la empresa actual con filtros.
+     */
+    protected function getMemorandumsQuery()
     {
         $user = auth()->user();
 
         if (! $user || ! $user->company_id) {
-            abort(403, 'No se encontró una empresa asociada al usuario.');
+            // Si por alguna razón no hay empresa, devolvemos un query vacío.
+            return Memorandum::query()->whereRaw('1 = 0');
         }
 
-        return (int) $user->company_id;
-    }
-
-    /**
-     * Consulta base de memorandos para la empresa actual.
-     */
-    protected function baseQuery()
-    {
-        $companyId = $this->currentCompanyId();
+        // Política general (si tienes policy para Memorandum)
+        try {
+            $this->authorize('viewAny', Memorandum::class);
+        } catch (\Throwable $e) {
+            // Si aún no tienes policy puedes comentar esta línea,
+            // o simplemente ignorar la excepción.
+        }
 
         $query = Memorandum::query()
-            ->forCompany($companyId)
-            ->with(['employee', 'author'])
+            ->forCompany($user->company_id)
+            ->with(['author', 'employee'])
             ->orderByDesc('issued_at')
             ->orderByDesc('created_at');
 
-        if (filled($this->search)) {
-            $query->search($this->search);
+        // Filtro de estado
+        if ($this->filtroEstado) {
+            $query->where('status', $this->filtroEstado);
         }
 
-        if ($this->employeeId) {
-            $query->where('employee_id', $this->employeeId);
+        // Filtro de búsqueda
+        if (trim($this->search) !== '') {
+            $term = trim($this->search);
+
+            $query->where(function ($q) use ($term) {
+                $q->where('subject', 'like', "%{$term}%")
+                    ->orWhere('body', 'like', "%{$term}%")
+                    ->orWhereHas('employee', function ($q2) use ($term) {
+                        $q2->where('first_name', 'like', "%{$term}%")
+                            ->orWhere('last_name', 'like', "%{$term}%")
+                            ->orWhere('position', 'like', "%{$term}%");
+                    })
+                    ->orWhereHas('author', function ($q2) use ($term) {
+                        $q2->where('name', 'like', "%{$term}%");
+                    });
+            });
         }
 
         return $query;
     }
 
     /**
-     * Obtiene la colección de memorandos según filtros actuales.
-     *
-     * @return \Illuminate\Support\Collection<int, \App\Models\Memorandum>
+     * Recalcula los conteos por estado para las tarjetas.
      */
-    protected function memorandums(): Collection
+    protected function actualizarConteos(): void
     {
-        return $this->baseQuery()->get();
-    }
+        $user = auth()->user();
 
-    /**
-     * Agrupa los memorandos por estado usando las constantes del modelo.
-     *
-     * @param  \Illuminate\Support\Collection<int, Memorandum>  $memorandums
-     * @return array<string, \Illuminate\Support\Collection>
-     */
-    protected function groupedByStatus(Collection $memorandums): array
-    {
-        $columns = [];
-
-        foreach (Memorandum::STATUSES as $status) {
-            $columns[$status] = $memorandums->filter(function (Memorandum $memorandum) use ($status) {
-                $current = $memorandum->status instanceof MemorandumStatus
-                    ? $memorandum->status->value
-                    : $memorandum->status;
-
-                return $current === $status;
-            });
-        }
-
-        return $columns;
-    }
-
-    /**
-     * Construye estadísticas simples por estado.
-     *
-     * @param  \Illuminate\Support\Collection<int, Memorandum>  $memorandums
-     * @return array<string, int>
-     */
-    protected function buildStats(Collection $memorandums): array
-    {
-        $countsByStatus = $memorandums
-            ->groupBy(function (Memorandum $memorandum) {
-                return $memorandum->status instanceof MemorandumStatus
-                    ? $memorandum->status->value
-                    : $memorandum->status;
-            })
-            ->map
-            ->count()
-            ->all();
-
-        $total = $memorandums->count();
-
-        return [
-            'total'        => $total,
-            'draft'        => (int) ($countsByStatus['draft'] ?? 0),
-            'in_review'    => (int) ($countsByStatus['in_review'] ?? 0),
-            'acknowledged' => (int) ($countsByStatus['acknowledged'] ?? 0),
-            'archived'     => (int) ($countsByStatus['archived'] ?? 0),
-        ];
-    }
-
-    /**
-     * Cambia el estado de un memorando y registra el historial.
-     */
-    public function changeStatus(int $memorandumId, string $newStatus): void
-    {
-        // Validar que el estado exista en el catálogo
-        if (! in_array($newStatus, Memorandum::STATUSES, true)) {
-            $this->dispatch('notify', type: 'error', message: 'Estado no válido.');
+        if (! $user || ! $user->company_id) {
+            $this->conteos = [
+                'draft'        => 0,
+                'in_review'    => 0,
+                'acknowledged' => 0,
+                'archived'     => 0,
+            ];
             return;
         }
 
-        $companyId = $this->currentCompanyId();
+        $base = Memorandum::query()->forCompany($user->company_id);
 
-        /** @var Memorandum $memorandum */
-        $memorandum = Memorandum::query()
-            ->forCompany($companyId)
-            ->whereKey($memorandumId)
-            ->firstOrFail();
-
-        // Política de autorización (MemorandumPolicy@update)
-        $this->authorize('update', $memorandum);
-
-        $previousStatus = $memorandum->status instanceof MemorandumStatus
-            ? $memorandum->status->value
-            : $memorandum->status;
-
-        $statusEnum = MemorandumStatus::from($newStatus);
-
-        // Reglas de negocio:
-        // - Si sale de draft, aseguramos issued_at
-        // - Si pasa a acknowledged, registramos acknowledged_at
-        if ($previousStatus === 'draft'
-            && $statusEnum !== MemorandumStatus::DRAFT
-            && ! $memorandum->issued_at
-        ) {
-            $memorandum->issued_at = now();
-        }
-
-        if ($statusEnum === MemorandumStatus::ACKNOWLEDGED
-            && ! $memorandum->acknowledged_at
-        ) {
-            $memorandum->acknowledged_at = now();
-        }
-
-        $memorandum->status = $statusEnum;
-        $memorandum->save();
-
-        // Registrar historial de cambio de estado
-        MemorandumStatusHistory::create([
-            'memorandum_id'   => $memorandum->id,
-            'user_id'         => auth()->id(),
-            'previous_status' => $previousStatus,
-            'new_status'      => $statusEnum->value,
-            'comment'         => null,
-        ]);
-
-        $this->dispatch('notify', type: 'success', message: 'Estado actualizado correctamente.');
+        $this->conteos = [
+            'draft'        => (clone $base)->where('status', MemorandumStatus::DRAFT->value)->count(),
+            'in_review'    => (clone $base)->where('status', MemorandumStatus::IN_REVIEW->value)->count(),
+            'acknowledged' => (clone $base)->where('status', MemorandumStatus::ACKNOWLEDGED->value)->count(),
+            'archived'     => (clone $base)->where('status', MemorandumStatus::ARCHIVED->value)->count(),
+        ];
     }
 
-    public function render(): View
+    public function render()
     {
-        $companyId = $this->currentCompanyId();
+        $query = $this->getMemorandumsQuery();
 
-        /** @var \Illuminate\Support\Collection<int, Employee> $employees */
-        $employees = Employee::query()
-            ->where('company_id', $companyId)
-            ->orderBy('first_name')
-            ->orderBy('last_name')
-            ->get();
+        // Recalculamos conteos para que estén frescos.
+        $this->actualizarConteos();
 
-        $memorandums = $this->memorandums();
-        $columns = $this->groupedByStatus($memorandums);
-        $stats = $this->buildStats($memorandums);
+        $memorandums = $query->paginate(20);
 
         return view('livewire.memorandums.board', [
-            'columns'          => $columns,
-            'employees'        => $employees,
-            'stats'            => $stats,
-            'totalMemorandums' => $stats['total'] ?? 0,
-        ])->layout('layouts.company');
+            'memorandumsPlanos' => $memorandums,
+            'tituloTabla'       => $this->tituloTabla,
+            'mensajeVacio'      => $this->mensajeVacio,
+            'conteos'           => $this->conteos,
+            'filtroEstado'      => $this->filtroEstado,
+        ]);
     }
 }

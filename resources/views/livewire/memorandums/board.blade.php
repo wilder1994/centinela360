@@ -1,254 +1,173 @@
 @php
-    use App\Enums\MemorandumStatus;
     use Illuminate\Support\Str;
-
-    $total = $totalMemorandums ?? 0;
+    use App\Enums\MemorandumStatus;
 @endphp
 
-<div class="space-y-8">
-    {{-- Encabezado --}}
-    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800">
-                Tablero de memorándums
-            </h1>
-            <p class="text-sm text-gray-500">
-                Visualiza el ciclo de vida de los memorándums por estado y actúa rápidamente sobre cada caso.
-            </p>
-        </div>
+<div class="flex flex-col gap-4 h-full w-full">
 
-        <div class="flex flex-col gap-3 md:flex-row md:items-center">
-            <a
-                href="{{ route('company.memorandums.index') }}"
-                class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-            >
-                ← Volver a la lista
-            </a>
+    {{-- Barra superior: volver al listado + buscador + tarjetas --}}
+    <div class="sticky top-0 z-10 space-y-3 bg-slate-50/80 backdrop-blur pb-3">
 
-            <a
-                href="{{ route('company.memorandums.create') }}"
-                class="inline-flex items-center justify-center rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-600"
-            >
-                + Registrar memorándum
+        {{-- 🔙 Volver al listado principal de memorándums --}}
+        <div class="flex justify-end">
+            <a href="{{ route('company.memorandums.index') }}"
+               class="inline-flex items-center px-3 py-1.5 rounded-full border border-slate-200 bg-white text-[11px] sm:text-xs font-medium text-slate-700 hover:bg-slate-50 transition">
+                ← Volver al listado
             </a>
         </div>
-    </div>
 
-    {{-- Tarjetas de métricas --}}
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="rounded-xl bg-white p-5 shadow-sm border border-gray-100">
-            <p class="text-xs font-semibold uppercase text-gray-500">Total memorándums</p>
-            <p class="mt-2 text-3xl font-bold text-gray-900">{{ $total }}</p>
-            <p class="mt-1 text-xs text-gray-400">Incluye todos los estados</p>
-        </div>
-
-        <div class="rounded-xl bg-white p-5 shadow-sm border border-blue-50">
-            <p class="text-xs font-semibold uppercase text-blue-600">Borradores</p>
-            <p class="mt-2 text-3xl font-bold text-blue-700">{{ $stats['draft'] ?? 0 }}</p>
-            <p class="mt-1 text-xs text-gray-400">Pendientes de revisión</p>
-        </div>
-
-        <div class="rounded-xl bg-white p-5 shadow-sm border border-amber-50">
-            <p class="text-xs font-semibold uppercase text-amber-600">En revisión</p>
-            <p class="mt-2 text-3xl font-bold text-amber-700">{{ $stats['in_review'] ?? 0 }}</p>
-            <p class="mt-1 text-xs text-gray-400">Activos en seguimiento</p>
-        </div>
-
-        <div class="rounded-xl bg-white p-5 shadow-sm border border-emerald-50">
-            <p class="text-xs font-semibold uppercase text-emerald-600">Confirmados</p>
-            <p class="mt-2 text-3xl font-bold text-emerald-700">
-                {{ ($stats['acknowledged'] ?? 0) + ($stats['archived'] ?? 0) }}
-            </p>
-            <p class="mt-1 text-xs text-gray-400">Acusados de recibo o archivados</p>
-        </div>
-    </div>
-
-    {{-- Filtros de búsqueda --}}
-    <div class="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
-        <div class="grid gap-3 md:grid-cols-[2fr,1.5fr] lg:grid-cols-[2fr,1.5fr,1fr] md:items-end">
-            {{-- Buscador --}}
-            <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">
-                    Buscar
-                </label>
-                <div class="relative">
+        {{-- 🔍 Buscador --}}
+        <div class="bg-white border border-slate-100 rounded-2xl shadow-sm px-3 py-2 sm:px-4 sm:py-3">
+            <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                <div class="flex-1 flex items-center gap-2">
                     <input
                         type="text"
-                        wire:model.debounce.500ms="search"
-                        placeholder="Asunto, contenido o empleado..."
-                        class="w-full rounded-lg border border-gray-300 px-3 py-2 pr-8 text-sm shadow-sm focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-                    >
-                    <span class="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-400">
-                        🔍
-                    </span>
+                        wire:model.live="search"
+                        wire:input.debounce.500ms="filtrar"
+                        placeholder="Buscar por asunto, contenido o colaborador..."
+                        autocomplete="off"
+                        spellcheck="true"
+                        class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl
+                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
                 </div>
             </div>
+        </div>
 
-            {{-- Filtro por empleado --}}
-            <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">
-                    Empleado
-                </label>
-                <select
-                    wire:model="employeeId"
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+        {{-- 📊 Tarjetas resumen por estado --}}
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            @foreach ([
+                'draft'        => ['label' => 'Borradores',        'color' => 'blue',   'icon' => '📝', 'status' => 'draft'],
+                'in_review'    => ['label' => 'En revisión',       'color' => 'amber',  'icon' => '🔄', 'status' => 'in_review'],
+                'acknowledged' => ['label' => 'Acusados',          'color' => 'green',  'icon' => '✅', 'status' => 'acknowledged'],
+                'archived'     => ['label' => 'Archivados',        'color' => 'slate',  'icon' => '📁', 'status' => 'archived'],
+            ] as $key => $info)
+                @php
+                    $count    = $conteos[$key] ?? 0;
+                    $isActive = ($filtroEstado ?? null) === $key;
+
+                    $baseBorder = match($info['color']) {
+                        'blue'  => 'border-blue-100',
+                        'amber' => 'border-amber-100',
+                        'green' => 'border-green-100',
+                        'slate' => 'border-slate-100',
+                        default => 'border-slate-100',
+                    };
+
+                    $iconBg = match($info['color']) {
+                        'blue'  => 'bg-blue-50 text-blue-500',
+                        'amber' => 'bg-amber-50 text-amber-500',
+                        'green' => 'bg-green-50 text-green-500',
+                        'slate' => 'bg-slate-50 text-slate-500',
+                        default => 'bg-slate-50 text-slate-500',
+                    };
+
+                    $borderClass = $isActive ? 'border-blue-400 shadow-md' : $baseBorder;
+                @endphp
+
+                {{-- La tarjeta simplemente aplica un filtro de estado en el board --}}
+                <button
+                    type="button"
+                    wire:click="filtrarPorEstado('{{ $info['status'] }}')"
+                    class="bg-white rounded-2xl border {{ $borderClass }} shadow-sm px-4 py-3 flex items-center justify-between w-full transition hover:shadow-md"
                 >
-                    <option value="">Todos los empleados</option>
-                    @foreach ($employees as $employee)
-                        <option value="{{ $employee->id }}">
-                            {{ $employee->first_name }} {{ $employee->last_name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Info resumida --}}
-            <div class="hidden lg:flex lg:flex-col lg:items-end lg:justify-center">
-                <p class="text-xs text-gray-500">
-                    Mostrando <span class="font-semibold text-gray-700">{{ $total }}</span> memorándum(s)
-                    según los filtros actuales.
-                </p>
-            </div>
+                    <div class="text-left">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                            {{ $info['label'] }}
+                        </p>
+                        <p class="mt-1 text-2xl font-semibold text-gray-800">
+                            {{ $count }}
+                        </p>
+                    </div>
+                    <div class="inline-flex h-9 w-9 items-center justify-center rounded-full {{ $iconBg }}">
+                        <span class="text-lg">{{ $info['icon'] }}</span>
+                    </div>
+                </button>
+            @endforeach
         </div>
     </div>
 
-    {{-- Tablero tipo kanban --}}
-    <div class="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
-        <div class="mb-3 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-gray-700">
-                Flujo por estado
-            </h2>
+    {{-- 📋 Listado general de memorándums --}}
+    <div class="flex-1 bg-white shadow-sm rounded-2xl border border-slate-100 p-3 sm:p-4 overflow-auto">
+        <h3 class="font-semibold mb-3 text-gray-800 text-sm sm:text-base">
+            {{ $tituloTabla ?? 'Listado de memorándums' }}
+        </h3>
+
+        <div class="w-full overflow-x-auto">
+            <table class="w-full text-xs sm:text-sm border-collapse table-auto">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-600">
+                        <th class="p-2 border text-left w-32 whitespace-nowrap">Fecha</th>
+                        <th class="p-2 border text-left w-40 whitespace-nowrap">Autor</th>
+                        <th class="p-2 border text-left w-48 whitespace-nowrap">Colaborador</th>
+                        <th class="p-2 border text-left w-56">Asunto</th>
+                        <th class="p-2 border text-left w-[40%]">Contenido</th>
+                        <th class="p-2 border text-center w-32">Estado</th>
+                        <th class="p-2 border text-center w-24">Detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($memorandumsPlanos as $m)
+                        @php
+                            $fecha = $m->issued_at ?? $m->created_at;
+                            $statusEnum = $m->status instanceof MemorandumStatus ? $m->status : MemorandumStatus::from($m->status);
+
+                            $badgeEstadoClasses = match($statusEnum->value) {
+                                'draft'        => 'bg-blue-100 text-blue-700',
+                                'in_review'    => 'bg-amber-100 text-amber-700',
+                                'acknowledged' => 'bg-emerald-100 text-emerald-700',
+                                'archived'     => 'bg-slate-100 text-slate-700',
+                                default        => 'bg-slate-100 text-slate-600',
+                            };
+                        @endphp
+
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-2 border align-top whitespace-nowrap">
+                                {{ optional($fecha)->format('d/m/Y H:i') }}
+                            </td>
+                            <td class="p-2 border align-top whitespace-nowrap">
+                                {{ Str::title(Str::lower($m->author?->name ?? '—')) }}
+                            </td>
+                            <td class="p-2 border align-top whitespace-nowrap">
+                                {{ $m->employee?->full_name ?? 'No asignado' }}
+                            </td>
+                            <td class="p-2 border align-top">
+                                {{ $m->subject }}
+                            </td>
+                            <td class="p-2 border align-top w-[40%]">
+                                <div class="text-[11px] sm:text-xs leading-snug">
+                                    {{ Str::limit(strip_tags($m->body), 200) }}
+                                </div>
+                            </td>
+                            <td class="p-2 border text-center align-top">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold {{ $badgeEstadoClasses }}">
+                                    {{ $statusEnum->label() }}
+                                </span>
+                            </td>
+                            <td class="p-2 border text-center align-top">
+                                <a
+                                    href="{{ route('company.memorandums.show', $m) }}"
+                                    class="px-3 py-1 rounded-lg bg-slate-700 text-white text-xs sm:text-sm hover:bg-slate-800 transition whitespace-nowrap inline-flex items-center justify-center">
+                                    Ver
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="text-center p-4 text-gray-500">
+                                {{ $mensajeVacio ?? 'No hay memorándums registrados con los filtros actuales.' }}
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            @foreach ($columns as $status => $memorandums)
-                @php
-                    $statusEnum = MemorandumStatus::from($status);
-                @endphp
-
-                <div class="flex flex-col rounded-xl border border-gray-200 bg-gray-50/80 p-3 shadow-sm min-h-[220px]">
-                    {{-- Header de la columna --}}
-                    <div class="mb-3 flex items-center justify-between gap-2">
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-800">
-                                {{ $statusEnum->label() }}
-                            </h3>
-                            <p class="text-xs text-gray-400">
-                                {{ $memorandums->count() }} memorándum(s)
-                            </p>
-                        </div>
-
-                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold
-                            @class([
-                                'bg-blue-100 text-blue-700' => $status === 'draft',
-                                'bg-amber-100 text-amber-700' => $status === 'in_review',
-                                'bg-emerald-100 text-emerald-700' => $status === 'acknowledged',
-                                'bg-slate-100 text-slate-700' => $status === 'archived',
-                                'bg-gray-100 text-gray-700' => ! in_array($status, ['draft', 'in_review', 'acknowledged', 'archived']),
-                            ])
-                        ">
-                            {{ strtoupper($status) }}
-                        </span>
-                    </div>
-
-                    {{-- Lista de tarjetas --}}
-                    <div class="flex-1 space-y-3 overflow-y-auto">
-                        @forelse ($memorandums as $memorandum)
-                            @php
-                                $currentStatus = $memorandum->status instanceof MemorandumStatus
-                                    ? $memorandum->status->value
-                                    : $memorandum->status;
-                            @endphp
-
-                            <div class="rounded-lg bg-white p-3 shadow-sm ring-1 ring-gray-200 transition hover:shadow-md hover:-translate-y-0.5">
-                                <div class="flex items-start justify-between gap-2">
-                                    <div>
-                                        <p class="text-xs font-mono text-gray-400">
-                                            {{ $memorandum->code }}
-                                        </p>
-                                        <h4 class="text-sm font-semibold text-gray-800">
-                                            {{ $memorandum->subject }}
-                                        </h4>
-                                    </div>
-                                </div>
-
-                                <div class="mt-2 space-y-1 text-xs text-gray-500">
-                                    @if ($memorandum->employee)
-                                        <p>
-                                            👤
-                                            {{ $memorandum->employee->first_name }}
-                                            {{ $memorandum->employee->last_name }}
-                                        </p>
-                                    @endif
-
-                                    <p class="line-clamp-2">
-                                        {{ Str::limit($memorandum->body, 120) }}
-                                    </p>
-
-                                    <p class="text-[11px] text-gray-400">
-                                        Estado:
-                                        <span class="font-medium text-gray-700">
-                                            {{ $memorandum->status_label }}
-                                        </span>
-                                    </p>
-
-                                    @if ($memorandum->issued_at)
-                                        <p class="text-[11px] text-gray-400">
-                                            Emitido: {{ $memorandum->issued_at->format('d/m/Y H:i') }}
-                                        </p>
-                                    @endif
-
-                                    @if ($memorandum->acknowledged_at)
-                                        <p class="text-[11px] text-gray-400">
-                                            Recibido: {{ $memorandum->acknowledged_at->format('d/m/Y H:i') }}
-                                        </p>
-                                    @endif
-                                </div>
-
-                                <div class="mt-3 flex items-center justify-between gap-2">
-                                    {{-- Botones de cambio de estado --}}
-                                    <div class="flex flex-wrap gap-2">
-                                        @if ($currentStatus === 'draft')
-                                            <button
-                                                wire:click="changeStatus({{ $memorandum->id }}, 'in_review')"
-                                                class="inline-flex items-center rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-indigo-700"
-                                            >
-                                                ▶ Enviar a revisión
-                                            </button>
-                                        @elseif ($currentStatus === 'in_review')
-                                            <button
-                                                wire:click="changeStatus({{ $memorandum->id }}, 'acknowledged')"
-                                                class="inline-flex items-center rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
-                                            >
-                                                ✔ Marcar recibido
-                                            </button>
-                                        @elseif ($currentStatus === 'acknowledged')
-                                            <button
-                                                wire:click="changeStatus({{ $memorandum->id }}, 'archived')"
-                                                class="inline-flex items-center rounded-md bg-slate-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-slate-700"
-                                            >
-                                                📁 Archivar
-                                            </button>
-                                        @endif
-                                    </div>
-
-                                    {{-- Link a detalle --}}
-                                    <a
-                                        href="{{ route('company.memorandums.show', $memorandum) }}"
-                                        class="text-xs font-medium text-indigo-600 hover:text-indigo-800"
-                                    >
-                                        Ver detalle →
-                                    </a>
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-xs text-gray-400">
-                                No hay memorándums en este estado con los filtros actuales.
-                            </p>
-                        @endforelse
-                    </div>
-                </div>
-            @endforeach
-        </div>
+        {{-- Si usas paginación en el componente, aquí podrías poner los links --}}
+        @if (method_exists($memorandumsPlanos, 'links'))
+            <div class="mt-3">
+                {{ $memorandumsPlanos->links() }}
+            </div>
+        @endif
     </div>
 </div>
