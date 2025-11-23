@@ -27,13 +27,18 @@ class Employee extends Model
         'birth_date',
         'start_date',
         'badge_expires_at',
-        'photo_path',
         'client_id',
         'service_type',
         'status',
         'emergency_contact_name',
         'emergency_contact_phone',
         'notes',
+    ];
+
+    protected $casts = [
+        'birth_date' => 'date',
+        'start_date' => 'date',
+        'badge_expires_at' => 'date',
     ];
 
     protected $casts = [
@@ -62,17 +67,6 @@ class Employee extends Model
     public function fullName(): Attribute
     {
         return Attribute::get(fn () => trim($this->first_name . ' ' . $this->last_name));
-    }
-
-    public function photoUrl(): Attribute
-    {
-        return Attribute::get(function () {
-            if ($this->photo_path && Storage::disk('public')->exists($this->photo_path)) {
-                return Storage::disk('public')->url($this->photo_path);
-            }
-
-            return asset('images/default-avatar.png');
-        });
     }
 
     public function scopeForCompany($query, int $companyId)

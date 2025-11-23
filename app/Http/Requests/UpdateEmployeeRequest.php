@@ -29,7 +29,6 @@ class UpdateEmployeeRequest extends FormRequest
             'birth_date' => ['required', 'date'],
             'start_date' => ['required', 'date'],
             'badge_expires_at' => ['required', 'date'],
-            'photo' => ['nullable', 'image', 'max:5120'],
             'client_id' => [
                 'required',
                 Rule::exists('clients', 'id')->where('company_id', $companyId),

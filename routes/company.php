@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Company\ClientController;
-use App\Http\Controllers\Company\EmployeeController;
 use App\Http\Controllers\Company\DashboardController;
 use App\Http\Controllers\Company\MemorandumController;
 use App\Livewire\Memorandums\Board;

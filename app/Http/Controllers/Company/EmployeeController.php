@@ -10,7 +10,6 @@ use App\Models\Employee;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
 {
@@ -48,10 +47,6 @@ class EmployeeController extends Controller
         $companyId = $request->user()->company_id;
         $data = $request->validated();
 
-        $photoPath = $request->file('photo')
-            ? $request->file('photo')->store('employees', 'public')
-            : null;
-
         Employee::create([
             'company_id' => $companyId,
             'first_name' => $data['first_name'],
@@ -66,7 +61,6 @@ class EmployeeController extends Controller
             'birth_date' => $data['birth_date'],
             'start_date' => $data['start_date'],
             'badge_expires_at' => $data['badge_expires_at'],
-            'photo_path' => $photoPath,
             'client_id' => $data['client_id'],
             'service_type' => $data['service_type'],
             'status' => $data['status'],
@@ -94,7 +88,7 @@ class EmployeeController extends Controller
         $this->authorizeEmployee($request, $employee);
         $data = $request->validated();
 
-        $payload = [
+        $employee->update([
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'email' => $data['email'] ?? null,
@@ -113,17 +107,7 @@ class EmployeeController extends Controller
             'emergency_contact_name' => $data['emergency_contact_name'],
             'emergency_contact_phone' => $data['emergency_contact_phone'],
             'notes' => $data['notes'] ?? null,
-        ];
-
-        if ($request->hasFile('photo')) {
-            if ($employee->photo_path) {
-                Storage::disk('public')->delete($employee->photo_path);
-            }
-
-            $payload['photo_path'] = $request->file('photo')->store('employees', 'public');
-        }
-
-        $employee->update($payload);
+        ]);
 
         return redirect()
             ->route('company.employees.index')
@@ -133,11 +117,6 @@ class EmployeeController extends Controller
     public function destroy(Request $request, Employee $employee): RedirectResponse
     {
         $this->authorizeEmployee($request, $employee);
-
-        if ($employee->photo_path) {
-            Storage::disk('public')->delete($employee->photo_path);
-        }
-
         $employee->delete();
 
         return redirect()

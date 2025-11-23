@@ -1,23 +1,16 @@
 @php
     $employee ??= null;
-    $photoUrl = $employee->photo_url ?? asset('images/default-avatar.png');
 @endphp
 
-<form method="POST" action="{{ $action }}" enctype="multipart/form-data" class="bg-white p-8 rounded-xl shadow-2xl space-y-8 mt-6 border border-gray-200 max-w-6xl w-full mx-auto">
+<form method="POST" action="{{ $action }}" class="bg-white p-8 rounded-xl shadow-2xl space-y-8 mt-6 border border-gray-200 max-w-6xl w-full mx-auto">
     @csrf
     @if($method === 'PUT')
         @method('PUT')
     @endif
 
-    <div class="flex flex-col items-center gap-4">
+    <div class="flex justify-center">
         <div class="relative">
-            <img src="{{ $photoUrl }}" data-photo-preview class="w-28 h-28 rounded-full border-4 border-white shadow-xl object-cover bg-gray-50" alt="Imagen de perfil">
-        </div>
-        <div class="flex flex-wrap items-center justify-center gap-3">
-            <input type="file" name="photo" accept="image/*" class="hidden" id="employee-photo" data-photo-input>
-            <button type="button" class="px-4 py-2 bg-[var(--primary)] text-white rounded-lg shadow" data-photo-trigger="library">Seleccionar del sistema</button>
-            <button type="button" class="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg border border-gray-200" data-photo-trigger="camera">Tomar foto con cámara</button>
-            @error('photo') <p class="text-sm text-red-600 w-full text-center">{{ $message }}</p> @enderror
+            <img src="{{ asset('images/default-avatar.png') }}" class="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover" alt="Imagen de perfil">
         </div>
     </div>
 
@@ -95,19 +88,19 @@
 
         <div>
             <label class="block text-sm font-medium text-gray-700">Fecha nacimiento</label>
-            <input name="birth_date" type="date" value="{{ old('birth_date', $employee?->birth_date?->format('Y-m-d')) }}" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
+            <input name="birth_date" type="date" value="{{ old('birth_date', optional($employee->birth_date)->format('Y-m-d')) }}" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
             @error('birth_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div>
             <label class="block text-sm font-medium text-gray-700">Fecha ingreso</label>
-            <input name="start_date" type="date" value="{{ old('start_date', $employee?->start_date?->format('Y-m-d')) }}" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
+            <input name="start_date" type="date" value="{{ old('start_date', optional($employee->start_date)->format('Y-m-d')) }}" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
             @error('start_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div>
             <label class="block text-sm font-medium text-gray-700">Fecha vencimiento carnet</label>
-            <input name="badge_expires_at" type="date" value="{{ old('badge_expires_at', $employee?->badge_expires_at?->format('Y-m-d')) }}" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
+            <input name="badge_expires_at" type="date" value="{{ old('badge_expires_at', optional($employee->badge_expires_at)->format('Y-m-d')) }}" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
             @error('badge_expires_at') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
     </div>
@@ -182,9 +175,6 @@
                 const clientSelect = document.querySelector('[data-client-select]');
                 const clientSearch = document.querySelector('[data-client-search]');
                 const serviceSelect = document.querySelector('[data-service-select]');
-                const photoInput = document.querySelector('[data-photo-input]');
-                const preview = document.querySelector('[data-photo-preview]');
-                const photoButtons = document.querySelectorAll('[data-photo-trigger]');
                 const serviceTypes = @json($serviceTypesOptions);
                 const clientServiceMap = @json($clientServicesMap);
                 const initialService = @json(old('service_type', $employee->service_type ?? ''));
@@ -236,32 +226,6 @@
                             clientSelect.value = firstVisible;
                             clientSelect.dispatchEvent(new Event('change'));
                         }
-                    });
-                }
-
-                if (photoInput && preview) {
-                    photoButtons.forEach((button) => {
-                        button.addEventListener('click', (event) => {
-                            const triggerType = event.currentTarget.getAttribute('data-photo-trigger');
-                            if (triggerType === 'camera') {
-                                photoInput.setAttribute('capture', 'environment');
-                            } else {
-                                photoInput.removeAttribute('capture');
-                            }
-
-                            photoInput.click();
-                        });
-                    });
-
-                    photoInput.addEventListener('change', (event) => {
-                        const [file] = event.target.files;
-                        if (!file) return;
-
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            preview.src = e.target.result;
-                        };
-                        reader.readAsDataURL(file);
                     });
                 }
             });
