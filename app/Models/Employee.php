@@ -33,13 +33,9 @@ class Employee extends Model
         'emergency_contact_name',
         'emergency_contact_phone',
         'notes',
+        'photo_path',          // 👈 AGREGA ESTA LÍNEA
     ];
 
-    protected $casts = [
-        'birth_date' => 'date',
-        'start_date' => 'date',
-        'badge_expires_at' => 'date',
-    ];
 
     protected $casts = [
         'birth_date' => 'date',
@@ -87,5 +83,14 @@ class Employee extends Model
                 ->orWhere('document_number', 'like', "%{$term}%")
                 ->orWhere('phone', 'like', "%{$term}%");
         });
+    }
+
+    public function getPhotoUrlAttribute(): string
+    {
+        if ($this->photo_path && Storage::disk('public')->exists($this->photo_path)) {
+            return asset('storage/' . $this->photo_path);
+        }
+
+        return asset('images/default-avatar.png');
     }
 }

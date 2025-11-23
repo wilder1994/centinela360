@@ -2,16 +2,35 @@
     $employee ??= null;
 @endphp
 
-<form method="POST" action="{{ $action }}" class="bg-white p-8 rounded-xl shadow-2xl space-y-8 mt-6 border border-gray-200 max-w-6xl w-full mx-auto">
+<form method="POST" action="{{ $action }}" enctype="multipart/form-data"
+      class="bg-white p-8 rounded-xl shadow-2xl space-y-8 mt-6 border border-gray-200 max-w-6xl w-full mx-auto">
     @csrf
     @if($method === 'PUT')
         @method('PUT')
     @endif
 
-    <div class="flex justify-center">
+    <div class="flex flex-col items-center gap-3">
         <div class="relative">
-            <img src="{{ asset('images/default-avatar.png') }}" class="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover" alt="Imagen de perfil">
+            <img id="employee-photo-preview"
+                src="{{ $employee?->photo_url ?? asset('images/default-avatar.png') }}"
+                class="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover"
+                alt="Imagen de perfil">
         </div>
+
+        <label class="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium cursor-pointer hover:bg-[var(--primary)]/90">
+            <span>Subir / tomar foto</span>
+            <input
+                id="employee-photo-input"
+                type="file"
+                name="photo"
+                accept="image/*"
+                capture="environment"
+                class="hidden">
+        </label>
+
+        @error('photo')
+            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+        @enderror
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -88,19 +107,25 @@
 
         <div>
             <label class="block text-sm font-medium text-gray-700">Fecha nacimiento</label>
-            <input name="birth_date" type="date" value="{{ old('birth_date', optional($employee->birth_date)->format('Y-m-d')) }}" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
+           <input name="birth_date" type="date"
+                value="{{ old('birth_date', $employee?->birth_date?->format('Y-m-d') ?? '') }}"
+                class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
             @error('birth_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div>
             <label class="block text-sm font-medium text-gray-700">Fecha ingreso</label>
-            <input name="start_date" type="date" value="{{ old('start_date', optional($employee->start_date)->format('Y-m-d')) }}" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
+            <input name="start_date" type="date"
+                value="{{ old('start_date', $employee?->start_date?->format('Y-m-d') ?? '') }}"
+                class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
             @error('start_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div>
             <label class="block text-sm font-medium text-gray-700">Fecha vencimiento carnet</label>
-            <input name="badge_expires_at" type="date" value="{{ old('badge_expires_at', optional($employee->badge_expires_at)->format('Y-m-d')) }}" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
+            <input name="badge_expires_at" type="date"
+                value="{{ old('badge_expires_at', $employee?->badge_expires_at?->format('Y-m-d') ?? '') }}"
+                class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
             @error('badge_expires_at') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
     </div>
@@ -172,6 +197,19 @@
     @once
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                // Preview de la foto del empleado
+                const photoInput = document.getElementById('employee-photo-input');
+                const photoPreview = document.getElementById('employee-photo-preview');
+
+                if (photoInput && photoPreview) {
+                    photoInput.addEventListener('change', (event) => {
+                        const [file] = event.target.files;
+                        if (file) {
+                            photoPreview.src = URL.createObjectURL(file);
+                        }
+                    });
+                }
+
                 const clientSelect = document.querySelector('[data-client-select]');
                 const clientSearch = document.querySelector('[data-client-search]');
                 const serviceSelect = document.querySelector('[data-service-select]');

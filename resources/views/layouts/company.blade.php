@@ -114,7 +114,7 @@
         <div class="topbar">
             <h1>{{ $company->name ?? 'Panel Empresa' }}</h1>
             <div class="user">
-                <div class="user-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
+                <div class="user-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 0)) }}</div>
                 <span>{{ Auth::user()->name }}</span>
                 <form method="POST" action="{{ route('logout') }}"> @csrf <button class="hover:underline">Cerrar sesión</button></form>
             </div>

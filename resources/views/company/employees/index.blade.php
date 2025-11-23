@@ -45,8 +45,15 @@
                 @forelse($employees as $employee)
                     <tr>
                         <td class="px-4 py-3">
-                            <div class="font-semibold">{{ $employee->fullName }}</div>
-                            <div class="text-xs text-gray-500">{{ $employee->position }}</div>
+                            <div class="flex items-center gap-3">
+                                <img src="{{ $employee->photo_url }}"
+                                    class="w-10 h-10 rounded-full object-cover border border-gray-300">
+
+                                <div>
+                                    <div class="font-semibold">{{ $employee->fullName }}</div>
+                                    <div class="text-xs text-gray-500">{{ $employee->position }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td class="px-4 py-3">{{ $employee->document_type }} {{ $employee->document_number }}</td>
                         <td class="px-4 py-3">{{ $employee->phone }}</td>

@@ -8,8 +8,10 @@ use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\Client;
 use App\Models\Employee;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+
 
 class EmployeeController extends Controller
 {
@@ -47,26 +49,31 @@ class EmployeeController extends Controller
         $companyId = $request->user()->company_id;
         $data = $request->validated();
 
+        if ($request->hasFile('photo')) {
+            $data['photo_path'] = $request->file('photo')->store('employees/photos', 'public');
+        }
+
         Employee::create([
             'company_id' => $companyId,
             'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'email' => $data['email'] ?? null,
-            'phone' => $data['phone'],
-            'position' => $data['position'],
-            'document_type' => $data['document_type'],
+            'last_name'  => $data['last_name'],
+            'email'      => $data['email'] ?? null,
+            'phone'      => $data['phone'],
+            'position'   => $data['position'],
+            'document_type'   => $data['document_type'],
             'document_number' => $data['document_number'],
-            'rh' => $data['rh'],
-            'address' => $data['address'],
-            'birth_date' => $data['birth_date'],
-            'start_date' => $data['start_date'],
+            'rh'              => $data['rh'],
+            'address'         => $data['address'],
+            'birth_date'      => $data['birth_date'],
+            'start_date'      => $data['start_date'],
             'badge_expires_at' => $data['badge_expires_at'],
-            'client_id' => $data['client_id'],
-            'service_type' => $data['service_type'],
-            'status' => $data['status'],
-            'emergency_contact_name' => $data['emergency_contact_name'],
+            'client_id'       => $data['client_id'],
+            'service_type'    => $data['service_type'],
+            'status'          => $data['status'],
+            'emergency_contact_name'  => $data['emergency_contact_name'],
             'emergency_contact_phone' => $data['emergency_contact_phone'],
-            'notes' => $data['notes'] ?? null,
+            'notes'           => $data['notes'] ?? null,
+            'photo_path'      => $data['photo_path'] ?? null,
         ]);
 
         return redirect()
@@ -88,25 +95,35 @@ class EmployeeController extends Controller
         $this->authorizeEmployee($request, $employee);
         $data = $request->validated();
 
+        if ($request->hasFile('photo')) {
+            // borrar foto anterior si existe
+            if ($employee->photo_path && Storage::disk('public')->exists($employee->photo_path)) {
+                Storage::disk('public')->delete($employee->photo_path);
+            }
+
+            $data['photo_path'] = $request->file('photo')->store('employees/photos', 'public');
+        }
+
         $employee->update([
             'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'email' => $data['email'] ?? null,
-            'phone' => $data['phone'],
-            'position' => $data['position'],
-            'document_type' => $data['document_type'],
+            'last_name'  => $data['last_name'],
+            'email'      => $data['email'] ?? null,
+            'phone'      => $data['phone'],
+            'position'   => $data['position'],
+            'document_type'   => $data['document_type'],
             'document_number' => $data['document_number'],
-            'rh' => $data['rh'],
-            'address' => $data['address'],
-            'birth_date' => $data['birth_date'],
-            'start_date' => $data['start_date'],
+            'rh'              => $data['rh'],
+            'address'         => $data['address'],
+            'birth_date'      => $data['birth_date'],
+            'start_date'      => $data['start_date'],
             'badge_expires_at' => $data['badge_expires_at'],
-            'client_id' => $data['client_id'],
-            'service_type' => $data['service_type'],
-            'status' => $data['status'],
-            'emergency_contact_name' => $data['emergency_contact_name'],
+            'client_id'       => $data['client_id'],
+            'service_type'    => $data['service_type'],
+            'status'          => $data['status'],
+            'emergency_contact_name'  => $data['emergency_contact_name'],
             'emergency_contact_phone' => $data['emergency_contact_phone'],
-            'notes' => $data['notes'] ?? null,
+            'notes'           => $data['notes'] ?? null,
+            'photo_path'      => $data['photo_path'] ?? $employee->photo_path,
         ]);
 
         return redirect()

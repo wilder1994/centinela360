@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Company\ClientController;
 use App\Http\Controllers\Company\DashboardController;
 use App\Http\Controllers\Company\MemorandumController;
+use App\Http\Controllers\Company\EmployeeController;
 use App\Livewire\Memorandums\Board;
 use App\Livewire\Memorandums\Finalized;
 

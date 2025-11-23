@@ -17,6 +17,7 @@ class UpdateEmployeeRequest extends FormRequest
         $companyId = $this->user()->company_id;
 
         return [
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'position' => ['required', 'string', 'max:255'],
