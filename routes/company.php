@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Company\ClientController;
 use App\Http\Controllers\Company\DashboardController;
 use App\Http\Controllers\Company\MemorandumController;
 use App\Livewire\Memorandums\Board;
@@ -44,17 +45,12 @@ Route::middleware(['auth', 'role:Admin Empresa'])
 
         // ---- BASE DE DATOS - CLIENTES ----
         Route::prefix('clients')->name('clients.')->group(function () {
-            Route::get('/', function () {
-                return view('company.clients.index');
-            })->name('index');
-
-            Route::get('/create', function () {
-                return view('company.clients.create');
-            })->name('create');
-
-            Route::get('/{client}/edit', function ($client) {
-                return view('company.clients.edit', compact('client'));
-            })->name('edit');
+            Route::get('/', [ClientController::class, 'index'])->name('index');
+            Route::get('/create', [ClientController::class, 'create'])->name('create');
+            Route::post('/', [ClientController::class, 'store'])->name('store');
+            Route::get('/{client}/edit', [ClientController::class, 'edit'])->name('edit');
+            Route::put('/{client}', [ClientController::class, 'update'])->name('update');
+            Route::delete('/{client}', [ClientController::class, 'destroy'])->name('destroy');
         });
 
         // ---- MEMORÁNDUMS ----
