@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Employee extends Model
 {
@@ -39,6 +40,14 @@ class Employee extends Model
         'start_date' => 'date',
         'badge_expires_at' => 'date',
     ];
+
+    protected $casts = [
+        'birth_date' => 'date',
+        'start_date' => 'date',
+        'badge_expires_at' => 'date',
+    ];
+
+    protected $appends = ['photo_url'];
 
     public function company(): BelongsTo
     {
