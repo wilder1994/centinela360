@@ -13,13 +13,8 @@
 
         <div class="flex gap-3">
             <a href="{{ route('company.memorandums.index') }}"
-               class="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium shadow hover:bg-gray-300">
-                ← Todos
-            </a>
-
-            <a href="{{ route('company.memorandums.board') }}"
-               class="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-600">
-                Tablero
+                class="inline-flex items-center px-3 py-1.5 rounded-full border border-slate-200 bg-white text-[11px] sm:text-xs font-medium text-slate-700 hover:bg-slate-50 transition">
+                ← Volver al listado
             </a>
         </div>
     </div>
