@@ -30,17 +30,12 @@ Route::middleware(['auth', 'role:Admin Empresa'])
 
         // ---- BASE DE DATOS - EMPLEADOS ----
         Route::prefix('employees')->name('employees.')->group(function () {
-            Route::get('/', function () {
-                return view('company.employees.index');
-            })->name('index');
-
-            Route::get('/create', function () {
-                return view('company.employees.create');
-            })->name('create');
-
-            Route::get('/{employee}/edit', function ($employee) {
-                return view('company.employees.edit', compact('employee'));
-            })->name('edit');
+            Route::get('/', [EmployeeController::class, 'index'])->name('index');
+            Route::get('/create', [EmployeeController::class, 'create'])->name('create');
+            Route::post('/', [EmployeeController::class, 'store'])->name('store');
+            Route::get('/{employee}/edit', [EmployeeController::class, 'edit'])->name('edit');
+            Route::put('/{employee}', [EmployeeController::class, 'update'])->name('update');
+            Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->name('destroy');
         });
 
         // ---- BASE DE DATOS - CLIENTES ----
