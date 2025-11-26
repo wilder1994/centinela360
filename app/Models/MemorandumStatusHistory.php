@@ -13,15 +13,15 @@ class MemorandumStatusHistory extends Model
 
     protected $fillable = [
         'memorandum_id',
-        'user_id',
-        'previous_status',
-        'new_status',
-        'comment',
+        'from_status',   // 👈 nombre real de la columna
+        'to_status',     // 👈 nombre real de la columna
+        'changed_by',    // 👈 IMPORTANTE: agregar este
+        'notes',
     ];
 
     protected $casts = [
-        'previous_status' => MemorandumStatus::class,
-        'new_status'      => MemorandumStatus::class,
+        'from_status' => MemorandumStatus::class, // 👈 antes tenías previous_status
+        'to_status'   => MemorandumStatus::class, // 👈 antes tenías new_status
     ];
 
     public function memorandum(): BelongsTo
@@ -29,8 +29,10 @@ class MemorandumStatusHistory extends Model
         return $this->belongsTo(Memorandum::class);
     }
 
-    public function user(): BelongsTo
+    // relación para "Cambio realizado por ..."
+    public function changer(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'changed_by');
     }
 }
+

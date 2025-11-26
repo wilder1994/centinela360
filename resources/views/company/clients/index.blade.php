@@ -33,11 +33,11 @@
             <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
                 <tr>
                     <th class="px-4 py-3 text-left">Cliente</th>
-                    <th class="px-4 py-3">NIT</th>
-                    <th class="px-4 py-3">Servicios</th>
-                    <th class="px-4 py-3">Tipo / Horario</th>
-                    <th class="px-4 py-3">Cuadrante</th>
-                    <th class="px-4 py-3">Acciones</th>
+                    <th class="px-4 py-3 text-left">NIT</th>
+                    <th class="px-4 py-3 text-left">Servicios</th>
+                    <th class="px-4 py-3 text-left">Tipo / Horario</th>
+                    <th class="px-4 py-3 text-left">Cuadrante</th>
+                    <th class="px-4 py-3 text-left">Acciones</th>
                 </tr>
             </thead>
             <tbody class="text-gray-700">
@@ -45,7 +45,7 @@
                     <tr class="border-t">
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-3">
-                                <img src="{{ asset('images/default-logo.png') }}" class="w-10 h-10 object-contain" alt="logo">
+                
                                 <div>
                                     <div class="font-semibold">{{ $client->business_name }}</div>
                                     <div class="text-xs text-gray-500">{{ $client->neighborhood }} • {{ $client->city }}</div>
