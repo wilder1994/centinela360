@@ -11,16 +11,30 @@
     @endif
 
     <form wire:submit.prevent="save" class="space-y-4">
-        {{-- Fila 1: Puesto / Asunto / Cargo --}}
+        {{-- Fila 1: Puesto / Asunto / Responsable --}}
         <div class="flex flex-col md:flex-row gap-4">
             {{-- Puesto --}}
-            <div class="flex-1">
+            <div class="flex-1 relative">
                 <input
                     type="text"
-                    wire:model.defer="puesto"
+                    wire:model.debounce.300ms="puesto"
                     class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-                    placeholder="Puesto"
+                    placeholder="Puesto (cliente)"
+                    autocomplete="off"
                 />
+                <input type="hidden" wire:model="clientId" />
+                @if($clients->isNotEmpty() && strlen($puesto) > 0)
+                    <div class="absolute z-10 mt-1 w-full bg-white border rounded shadow">
+                        @foreach($clients as $client)
+                            <button type="button" wire:click="selectClient({{ $client->id }})" class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm">
+                                {{ $client->business_name }}
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+                @error('clientId')
+                    <div class="text-red-600 text-xs mt-1">Debes seleccionar un puesto válido</div>
+                @enderror
                 @error('puesto')
                     <div class="text-red-600 text-xs mt-1">El puesto es obligatorio</div>
                 @enderror
@@ -36,48 +50,6 @@
                 />
                 @error('subject')
                     <div class="text-red-600 text-xs mt-1">El asunto es obligatorio</div>
-                @enderror
-            </div>
-
-            {{-- Cargo --}}
-            <div class="flex-1">
-                <input
-                    type="text"
-                    wire:model.defer="cargo"
-                    class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-                    placeholder="Cargo"
-                />
-                @error('cargo')
-                    <div class="text-red-600 text-xs mt-1">El cargo es obligatorio</div>
-                @enderror
-            </div>
-        </div>
-
-        {{-- Fila 2: Nombre / Cédula / Responsable --}}
-        <div class="flex flex-col md:flex-row gap-4">
-            {{-- Nombre --}}
-            <div class="flex-1">
-                <input
-                    type="text"
-                    wire:model.defer="nombre"
-                    class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-                    placeholder="Nombre"
-                />
-                @error('nombre')
-                    <div class="text-red-600 text-xs mt-1">El nombre es obligatorio</div>
-                @enderror
-            </div>
-
-            {{-- Cédula --}}
-            <div class="flex-1">
-                <input
-                    type="text"
-                    wire:model.defer="cedula"
-                    class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-                    placeholder="Cédula"
-                />
-                @error('cedula')
-                    <div class="text-red-600 text-xs mt-1">La cédula es obligatoria</div>
                 @enderror
             </div>
 
@@ -98,6 +70,67 @@
                 </select>
                 @error('responsable')
                     <div class="text-red-600 text-xs mt-1">Debe asignar un responsable</div>
+                @enderror
+            </div>
+        </div>
+
+        {{-- Fila 2: Nombre / Cédula / Cargo --}}
+        <div class="flex flex-col md:flex-row gap-4">
+            {{-- Nombre --}}
+            <div class="flex-1 relative">
+                <input
+                    type="text"
+                    wire:model.debounce.300ms="nombre"
+                    class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                    placeholder="Nombre"
+                    autocomplete="off"
+                />
+                <input type="hidden" wire:model="employeeId" />
+                @if($employees->isNotEmpty() && strlen($nombre) > 0)
+                    <div class="absolute z-10 mt-1 w-full bg-white border rounded shadow">
+                        @foreach($employees as $employee)
+                            <button type="button" wire:click="selectEmployee({{ $employee->id }})" class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm">
+                                {{ $employee->full_name }}
+                                @if($employee->position)
+                                    <span class="text-gray-500 text-xs"> · {{ $employee->position }}</span>
+                                @endif
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+                @error('employeeId')
+                    <div class="text-red-600 text-xs mt-1">Selecciona un empleado válido</div>
+                @enderror
+                @error('nombre')
+                    <div class="text-red-600 text-xs mt-1">El nombre es obligatorio</div>
+                @enderror
+            </div>
+
+            {{-- Cédula --}}
+            <div class="flex-1">
+                <input
+                    type="text"
+                    wire:model.defer="cedula"
+                    class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                    placeholder="Cédula"
+                    readonly
+                />
+                @error('cedula')
+                    <div class="text-red-600 text-xs mt-1">La cédula es obligatoria</div>
+                @enderror
+            </div>
+
+            {{-- Cargo --}}
+            <div class="flex-1">
+                <input
+                    type="text"
+                    wire:model.defer="cargo"
+                    class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+                    placeholder="Cargo"
+                    readonly
+                />
+                @error('cargo')
+                    <div class="text-red-600 text-xs mt-1">El cargo es obligatorio</div>
                 @enderror
             </div>
         </div>
