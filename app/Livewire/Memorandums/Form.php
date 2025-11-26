@@ -31,6 +31,9 @@ class Form extends Component
     public string $prioridad = 'media';   // urgente / alta / media / baja
     public string $descripcion = '';      // texto libre principal
 
+    public string $selectedClientName = '';
+    public string $selectedEmployeeName = '';
+
     public function mount(?Memorandum $memorandum = null): void
     {
         $this->memorandum = $memorandum;
@@ -55,7 +58,7 @@ class Form extends Component
                 $this->puesto        = $employee->client?->business_name ?? '';
             }
         } else {
-            
+
             // Valores por defecto
             $this->prioridad = 'media';
         }
