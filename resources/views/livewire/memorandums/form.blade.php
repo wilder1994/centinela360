@@ -42,6 +42,7 @@
 
             {{-- Asunto --}}
             <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Asunto</label>
                 <input
                     type="text"
                     wire:model.defer="subject"
@@ -108,6 +109,7 @@
 
             {{-- Cédula --}}
             <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Cédula</label>
                 <input
                     type="text"
                     wire:model.defer="cedula"
@@ -115,6 +117,7 @@
                     placeholder="Cédula"
                     readonly
                 />
+                <p class="text-xs text-gray-500 mt-1">Se llena automáticamente al seleccionar el empleado.</p>
                 @error('cedula')
                     <div class="text-red-600 text-xs mt-1">La cédula es obligatoria</div>
                 @enderror
