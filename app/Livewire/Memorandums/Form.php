@@ -56,8 +56,6 @@ class Form extends Component
                 $this->cargo         = $employee->service_type ?? $employee->position ?? '';
                 $this->clientId      = $employee->client_id;
                 $this->puesto        = $employee->client?->business_name ?? '';
-                $this->selectedClientName = $this->puesto;
-                $this->selectedEmployeeName = $this->nombre;
             }
         } else {
 
@@ -179,7 +177,7 @@ class Form extends Component
         // Si más adelante quieres usar empleados, aquí los tienes disponibles:
         $employees = Employee::query()
             ->where('company_id', $companyId)
-            ->where(fn ($query) => $this->clientId ? $query->where('client_id', $this->clientId) : $query->whereRaw('1 = 0'))
+            ->when($this->clientId, fn ($query) => $query->where('client_id', $this->clientId))
             ->search($this->nombre)
             ->orderBy('first_name')
             ->orderBy('last_name')
@@ -209,7 +207,6 @@ class Form extends Component
         }
 
         $this->clientId = $client->id;
-        $this->selectedClientName = $client->business_name;
         $this->puesto   = $client->business_name;
 
         $this->resetEmployeeSelection();
@@ -228,7 +225,6 @@ class Form extends Component
         }
 
         $this->employeeId = $employee->id;
-        $this->selectedEmployeeName = $employee->full_name;
         $this->nombre     = $employee->full_name;
         $this->cedula     = $employee->document_number ?? '';
         $this->cargo      = $employee->service_type ?? $employee->position ?? '';
@@ -236,21 +232,12 @@ class Form extends Component
 
     public function updatedPuesto(): void
     {
-        if ($this->puesto === $this->selectedClientName) {
-            return;
-        }
-
         $this->clientId = null;
-        $this->selectedClientName = '';
         $this->resetEmployeeSelection();
     }
 
     public function updatedNombre(): void
     {
-        if ($this->nombre === $this->selectedEmployeeName) {
-            return;
-        }
-
         $this->resetEmployeeSelection();
     }
 
@@ -260,7 +247,6 @@ class Form extends Component
         $this->nombre     = '';
         $this->cedula     = '';
         $this->cargo      = '';
-        $this->selectedEmployeeName = '';
     }
 
     private function companyId(): int
