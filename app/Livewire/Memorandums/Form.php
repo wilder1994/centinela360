@@ -3,6 +3,7 @@
 namespace App\Livewire\Memorandums;
 
 use App\Enums\MemorandumStatus;
+use App\Models\Client;
 use App\Models\Employee;
 use App\Models\Memorandum;
 use App\Models\User;
@@ -24,9 +25,16 @@ class Form extends Component
     public string $cargo = '';
     public string $nombre = '';
     public string $cedula = '';
+    public ?int $clientId = null;         // cliente asociado al puesto
+    public ?int $employeeId = null;       // empleado seleccionado
     public ?int $responsable = null;      // id de usuario responsable
     public string $prioridad = 'media';   // urgente / alta / media / baja
     public string $descripcion = '';      // texto libre principal
+
+    public string $selectedClientName = '';
+    public string $selectedEmployeeName = '';
+    public bool $showClientResults = false;
+    public bool $showEmployeeResults = false;
 
     public function mount(?Memorandum $memorandum = null): void
     {
@@ -34,13 +42,27 @@ class Form extends Component
         $this->isEdit = $memorandum && $memorandum->exists;
 
         if ($this->isEdit) {
+            $this->memorandum->loadMissing(['employee.client']);
 
             // Mapeo básico para edición (no intentamos parsear campos, solo llenamos lo mínimo)
             $this->subject     = $this->memorandum->subject;
             $this->descripcion = $this->memorandum->body;
             $this->issued_at   = optional($this->memorandum->issued_at)?->format('Y-m-d\TH:i');
+
+            // Si el memorando ya tenía empleado asociado, rellenamos los campos derivados
+            if ($this->memorandum->employee) {
+                $employee            = $this->memorandum->employee;
+                $this->employeeId    = $employee->id;
+                $this->nombre        = $employee->full_name;
+                $this->cedula        = $employee->document_number ?? '';
+                $this->cargo         = $employee->service_type ?? $employee->position ?? '';
+                $this->clientId      = $employee->client_id;
+                $this->puesto        = $employee->client?->business_name ?? '';
+                $this->selectedClientName = $this->puesto;
+                $this->selectedEmployeeName = $this->nombre;
+            }
         } else {
-            
+
             // Valores por defecto
             $this->prioridad = 'media';
         }
@@ -48,13 +70,32 @@ class Form extends Component
 
     protected function rules(): array
     {
+        $companyId = $this->companyId();
+
         return [
+            'clientId'    => [
+                'required',
+                Rule::exists('clients', 'id')->where(fn ($q) => $q->where('company_id', $companyId)),
+            ],
             'puesto'      => ['required', 'string', 'max:255'],
             'subject'     => ['required', 'string', 'max:255'],
             'cargo'       => ['required', 'string', 'max:255'],
             'nombre'      => ['required', 'string', 'max:255'],
             'cedula'      => ['required', 'string', 'max:50'],
-            'responsable' => ['nullable', Rule::exists('users', 'id')],
+            'employeeId'  => [
+                'required',
+                Rule::exists('employees', 'id')->where(function ($q) use ($companyId) {
+                    $q->where('company_id', $companyId);
+
+                    if ($this->clientId) {
+                        $q->where('client_id', $this->clientId);
+                    }
+                }),
+            ],
+            'responsable' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('company_id', $companyId)),
+            ],
             'descripcion' => ['required', 'string'],
             'prioridad'   => ['required', Rule::in(['urgente', 'alta', 'media', 'baja'])],
             'issued_at'   => ['nullable', 'date'],
@@ -65,18 +106,25 @@ class Form extends Component
     {
         $this->validate();
 
+        $companyId = $this->companyId();
         $user = auth()->user();
-        if (! $user || ! $user->company_id) {
-            abort(403, 'No se encontró una empresa asociada al usuario.');
+
+        if (! $user) {
+            abort(403, 'No se encontró un usuario autenticado.');
         }
+
+        $client = Client::forCompany($companyId)->findOrFail($this->clientId);
+        $employee = Employee::forCompany($companyId)
+            ->when($client->id, fn ($query) => $query->where('client_id', $client->id))
+            ->findOrFail($this->employeeId);
 
         // Buscamos el responsable (usuario) solo para usar su nombre en el texto
         $responsableUser = $this->responsable
-            ? User::find($this->responsable)
+            ? User::query()->where('company_id', $companyId)->find($this->responsable)
             : null;
 
         // 🔹 Armamos el cuerpo completo con todos los campos “estilo P3”
-        $body = "Puesto: {$this->puesto}\n"
+        $body = "Puesto: {$client->business_name}\n"
             . "Cargo: {$this->cargo}\n"
             . "Nombre: {$this->nombre}\n"
             . "Cédula: {$this->cedula}\n"
@@ -89,6 +137,7 @@ class Form extends Component
 
             $memorandum->subject = $this->subject;
             $memorandum->body    = $body;
+            $memorandum->employee_id = $employee->id;
             $memorandum->issued_at = $this->issued_at
                 ? \Carbon\Carbon::parse($this->issued_at)
                 : $memorandum->issued_at;
@@ -101,7 +150,7 @@ class Form extends Component
 
             $memorandum->company_id = $user->company_id;
             $memorandum->user_id    = $user->id; // autor
-            $memorandum->employee_id = null;     // por ahora no lo usamos en este formulario
+            $memorandum->employee_id = $employee->id;
 
             $memorandum->subject = $this->subject;
             $memorandum->body    = $body;
@@ -120,13 +169,23 @@ class Form extends Component
 
     public function render()
     {
-        $companyId = auth()->user()->company_id;
+        $companyId = $this->companyId();
+
+        $clients = Client::query()
+            ->forCompany($companyId)
+            ->search($this->puesto)
+            ->orderBy('business_name')
+            ->limit(10)
+            ->get();
 
         // Si más adelante quieres usar empleados, aquí los tienes disponibles:
         $employees = Employee::query()
             ->where('company_id', $companyId)
+            ->where(fn ($query) => $this->clientId ? $query->where('client_id', $this->clientId) : $query->whereRaw('1 = 0'))
+            ->search($this->nombre)
             ->orderBy('first_name')
             ->orderBy('last_name')
+            ->limit(10)
             ->get();
 
         // Responsables (usuarios de la empresa)
@@ -136,8 +195,118 @@ class Form extends Component
             ->get();
 
         return view('livewire.memorandums.form', [
-            'employees' => $employees,
-            'usuarios'  => $usuarios,
+            'clients'    => $clients,
+            'employees'  => $employees,
+            'usuarios'   => $usuarios,
         ]);
+    }
+
+    public function selectClient(int $clientId): void
+    {
+        $companyId = $this->companyId();
+        $client = Client::forCompany($companyId)->find($clientId);
+
+        if (! $client) {
+            return;
+        }
+
+        $this->clientId = $client->id;
+        $this->selectedClientName = $client->business_name;
+        $this->puesto   = $client->business_name;
+
+        $this->resetEmployeeSelection();
+
+        $this->showClientResults = false;
+    }
+
+    public function selectEmployee(int $employeeId): void
+    {
+        $companyId = $this->companyId();
+
+        $employee = Employee::forCompany($companyId)
+            ->when($this->clientId, fn ($query) => $query->where('client_id', $this->clientId))
+            ->find($employeeId);
+
+        if (! $employee) {
+            return;
+        }
+
+        $this->employeeId = $employee->id;
+        $this->selectedEmployeeName = $employee->full_name;
+        $this->nombre     = $employee->full_name;
+        $this->cedula     = $employee->document_number ?? '';
+        $this->cargo      = $employee->service_type ?? $employee->position ?? '';
+
+        $this->showEmployeeResults = false;
+    }
+
+    public function updatedPuesto(): void
+    {
+        if ($this->puesto === $this->selectedClientName) {
+            return;
+        }
+
+        $this->clientId = null;
+        $this->selectedClientName = '';
+        $this->resetEmployeeSelection();
+
+        $this->showClientResults = strlen($this->puesto) > 0;
+    }
+
+    public function updatedNombre(): void
+    {
+        if ($this->nombre === $this->selectedEmployeeName) {
+            return;
+        }
+
+        $this->resetEmployeeSelection();
+
+        $this->showEmployeeResults = $this->clientId && strlen($this->nombre) > 0;
+    }
+
+    public function openClientResults(): void
+    {
+        $this->showClientResults = strlen($this->puesto) > 0;
+    }
+
+    public function hideClientResults(): void
+    {
+        $this->showClientResults = false;
+    }
+
+    public function openEmployeeResults(): void
+    {
+        if (! $this->clientId) {
+            $this->showEmployeeResults = false;
+            return;
+        }
+
+        $this->showEmployeeResults = strlen($this->nombre) > 0;
+    }
+
+    public function hideEmployeeResults(): void
+    {
+        $this->showEmployeeResults = false;
+    }
+
+    private function resetEmployeeSelection(): void
+    {
+        $this->employeeId = null;
+        $this->nombre     = '';
+        $this->cedula     = '';
+        $this->cargo      = '';
+        $this->selectedEmployeeName = '';
+        $this->showEmployeeResults = false;
+    }
+
+    private function companyId(): int
+    {
+        $companyId = auth()->user()?->company_id;
+
+        if (! $companyId) {
+            abort(403, 'No se encontró una empresa asociada al usuario.');
+        }
+
+        return $companyId;
     }
 }

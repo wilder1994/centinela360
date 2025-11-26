@@ -14,13 +14,31 @@
         {{-- Fila 1: Puesto / Asunto / Cargo --}}
         <div class="flex flex-col md:flex-row gap-4">
             {{-- Puesto --}}
-            <div class="flex-1">
+            <div class="flex-1 relative" wire:click.away="hideClientResults">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Puesto (cliente)</label>
                 <input
-                    type="text"
-                    wire:model.defer="puesto"
+                    type="search"
+                    wire:model.live.debounce.300ms="puesto"
+                    wire:focus="openClientResults"
+                    wire:keydown.escape="hideClientResults"
                     class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-                    placeholder="Puesto"
+                    placeholder="Escribe para buscar y seleccionar un cliente"
+                    autocomplete="off"
                 />
+                <input type="hidden" wire:model="clientId" />
+                @if($clients->isNotEmpty() && $showClientResults)
+                    <div class="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-52 overflow-auto">
+                        @foreach($clients as $client)
+                            <button type="button" wire:click="selectClient({{ $client->id }})" class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm">
+                                {{ $client->business_name }}
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+                <p class="text-xs text-gray-500 mt-1">Solo se permite elegir un cliente existente, no texto libre.</p>
+                @error('clientId')
+                    <div class="text-red-600 text-xs mt-1">Debes seleccionar un puesto válido</div>
+                @enderror
                 @error('puesto')
                     <div class="text-red-600 text-xs mt-1">El puesto es obligatorio</div>
                 @enderror
@@ -28,6 +46,7 @@
 
             {{-- Asunto --}}
             <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Asunto</label>
                 <input
                     type="text"
                     wire:model.defer="subject"
@@ -41,12 +60,15 @@
 
             {{-- Cargo --}}
             <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Cargo</label>
                 <input
                     type="text"
                     wire:model.defer="cargo"
                     class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
                     placeholder="Cargo"
+                    readonly
                 />
+                <p class="text-xs text-gray-500 mt-1">Se llena automáticamente con el tipo/posición del empleado.</p>
                 @error('cargo')
                     <div class="text-red-600 text-xs mt-1">El cargo es obligatorio</div>
                 @enderror
@@ -56,13 +78,37 @@
         {{-- Fila 2: Nombre / Cédula / Responsable --}}
         <div class="flex flex-col md:flex-row gap-4">
             {{-- Nombre --}}
-            <div class="flex-1">
+            <div class="flex-1 relative" wire:click.away="hideEmployeeResults">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre</label>
                 <input
-                    type="text"
-                    wire:model.defer="nombre"
+                    type="search"
+                    wire:model.live.debounce.300ms="nombre"
+                    wire:focus="openEmployeeResults"
+                    wire:keydown.escape="hideEmployeeResults"
                     class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
-                    placeholder="Nombre"
+                    placeholder="Escribe para buscar un empleado del cliente seleccionado"
+                    autocomplete="off"
+                    @disabled(!$clientId)
                 />
+                <input type="hidden" wire:model="employeeId" />
+                @if($clientId && $employees->isNotEmpty() && $showEmployeeResults)
+                    <div class="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-52 overflow-auto">
+                        @foreach($employees as $employee)
+                            <button type="button" wire:click="selectEmployee({{ $employee->id }})" class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm">
+                                {{ $employee->full_name }}
+                                @if($employee->position)
+                                    <span class="text-gray-500 text-xs"> · {{ $employee->position }}</span>
+                                @endif
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+                <p class="text-xs text-gray-500 mt-1">
+                    Primero elige un cliente; luego podrás buscar solo entre sus empleados.
+                </p>
+                @error('employeeId')
+                    <div class="text-red-600 text-xs mt-1">Selecciona un empleado válido</div>
+                @enderror
                 @error('nombre')
                     <div class="text-red-600 text-xs mt-1">El nombre es obligatorio</div>
                 @enderror
@@ -70,12 +116,15 @@
 
             {{-- Cédula --}}
             <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Cédula</label>
                 <input
                     type="text"
                     wire:model.defer="cedula"
                     class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
                     placeholder="Cédula"
+                    readonly
                 />
+                <p class="text-xs text-gray-500 mt-1">Se llena automáticamente al seleccionar el empleado.</p>
                 @error('cedula')
                     <div class="text-red-600 text-xs mt-1">La cédula es obligatoria</div>
                 @enderror
@@ -83,6 +132,7 @@
 
             {{-- Responsable --}}
             <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Seleccionar responsable</label>
                 <select
                     wire:model.defer="responsable"
                     class="border rounded px-3 py-2 w-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
