@@ -33,8 +33,6 @@ class Form extends Component
 
     public string $selectedClientName = '';
     public string $selectedEmployeeName = '';
-    public bool $showClientResults = false;
-    public bool $showEmployeeResults = false;
 
     public function mount(?Memorandum $memorandum = null): void
     {
@@ -58,8 +56,6 @@ class Form extends Component
                 $this->cargo         = $employee->service_type ?? $employee->position ?? '';
                 $this->clientId      = $employee->client_id;
                 $this->puesto        = $employee->client?->business_name ?? '';
-                $this->selectedClientName = $this->puesto;
-                $this->selectedEmployeeName = $this->nombre;
             }
         } else {
 
@@ -181,7 +177,7 @@ class Form extends Component
         // Si más adelante quieres usar empleados, aquí los tienes disponibles:
         $employees = Employee::query()
             ->where('company_id', $companyId)
-            ->where(fn ($query) => $this->clientId ? $query->where('client_id', $this->clientId) : $query->whereRaw('1 = 0'))
+            ->when($this->clientId, fn ($query) => $query->where('client_id', $this->clientId))
             ->search($this->nombre)
             ->orderBy('first_name')
             ->orderBy('last_name')
@@ -211,12 +207,9 @@ class Form extends Component
         }
 
         $this->clientId = $client->id;
-        $this->selectedClientName = $client->business_name;
         $this->puesto   = $client->business_name;
 
         $this->resetEmployeeSelection();
-
-        $this->showClientResults = false;
     }
 
     public function selectEmployee(int $employeeId): void
@@ -232,61 +225,20 @@ class Form extends Component
         }
 
         $this->employeeId = $employee->id;
-        $this->selectedEmployeeName = $employee->full_name;
         $this->nombre     = $employee->full_name;
         $this->cedula     = $employee->document_number ?? '';
         $this->cargo      = $employee->service_type ?? $employee->position ?? '';
-
-        $this->showEmployeeResults = false;
     }
 
     public function updatedPuesto(): void
     {
-        if ($this->puesto === $this->selectedClientName) {
-            return;
-        }
-
         $this->clientId = null;
-        $this->selectedClientName = '';
         $this->resetEmployeeSelection();
-
-        $this->showClientResults = strlen($this->puesto) > 0;
     }
 
     public function updatedNombre(): void
     {
-        if ($this->nombre === $this->selectedEmployeeName) {
-            return;
-        }
-
         $this->resetEmployeeSelection();
-
-        $this->showEmployeeResults = $this->clientId && strlen($this->nombre) > 0;
-    }
-
-    public function openClientResults(): void
-    {
-        $this->showClientResults = strlen($this->puesto) > 0;
-    }
-
-    public function hideClientResults(): void
-    {
-        $this->showClientResults = false;
-    }
-
-    public function openEmployeeResults(): void
-    {
-        if (! $this->clientId) {
-            $this->showEmployeeResults = false;
-            return;
-        }
-
-        $this->showEmployeeResults = strlen($this->nombre) > 0;
-    }
-
-    public function hideEmployeeResults(): void
-    {
-        $this->showEmployeeResults = false;
     }
 
     private function resetEmployeeSelection(): void
@@ -295,8 +247,6 @@ class Form extends Component
         $this->nombre     = '';
         $this->cedula     = '';
         $this->cargo      = '';
-        $this->selectedEmployeeName = '';
-        $this->showEmployeeResults = false;
     }
 
     private function companyId(): int
