@@ -3,7 +3,6 @@
         MEMORANDO
     </h3>
 
-    {{-- Mensaje flash simple --}}
     @if (session('status'))
         <div class="mb-3 px-3 py-2 rounded bg-emerald-50 text-emerald-700 text-sm border border-emerald-100">
             {{ session('status') }}
@@ -13,31 +12,45 @@
     <form wire:submit.prevent="save" class="space-y-4">
         {{-- Fila 1: Puesto / Asunto / Responsable --}}
         <div class="flex flex-col md:flex-row gap-4">
-            {{-- Puesto --}}
+            {{-- Puesto (cliente) --}}
             <div class="flex-1 relative">
                 <input
                     type="text"
-                    wire:model.debounce.300ms="puesto"
+                    wire:model.debounce.300ms="puestoSearch"
                     class="border rounded px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
                     placeholder="Puesto (cliente)"
                     autocomplete="off"
                 />
                 <input type="hidden" wire:model="clientId" />
-                @if($clients->isNotEmpty() && strlen($puesto) > 0)
-                    <div class="absolute z-10 mt-1 w-full bg-white border rounded shadow">
-                        @foreach($clients as $client)
-                            <button type="button" wire:click="selectClient({{ $client->id }})" class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm">
+
+                @if ($clients->isNotEmpty() && strlen($puestoSearch) > 0)
+                    <div class="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+                        @foreach ($clients as $client)
+                            <button
+                                type="button"
+                                wire:click="selectClient({{ $client->id }})"
+                                class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                            >
                                 {{ $client->business_name }}
                             </button>
                         @endforeach
                     </div>
                 @endif
+
                 @error('clientId')
                     <div class="text-red-600 text-xs mt-1">Debes seleccionar un puesto válido</div>
                 @enderror
                 @error('puesto')
                     <div class="text-red-600 text-xs mt-1">El puesto es obligatorio</div>
                 @enderror
+
+                {{-- DEBUG temporal (puedes quitarlo luego) --}}
+                <div class="mt-1 text-[10px] text-gray-500">
+                    DEBUG → puesto: <strong>{{ $puesto ?: '∅' }}</strong> |
+                    puestoSearch: <strong>{{ $puestoSearch ?: '∅' }}</strong> |
+                    clientId: <strong>{{ $clientId ?: '∅' }}</strong> |
+                    clients: <strong>{{ $clients->count() }}</strong>
+                </div>
             </div>
 
             {{-- Asunto --}}
@@ -60,11 +73,11 @@
                     wire:model.defer="responsable"
                     class="border rounded px-3 py-2 w-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
                 >
-                    @if($usuarios->isEmpty())
+                    @if ($usuarios->isEmpty())
                         <option value="" disabled>No hay responsables disponibles</option>
                     @else
                         <option value="">Seleccionar responsable</option>
-                        @foreach($usuarios as $usuario)
+                        @foreach ($usuarios as $usuario)
                             <option value="{{ $usuario->id }}">{{ $usuario->name }}</option>
                         @endforeach
                     @endif
@@ -77,7 +90,7 @@
 
         {{-- Fila 2: Nombre / Cédula / Cargo --}}
         <div class="flex flex-col md:flex-row gap-4">
-            {{-- Nombre --}}
+            {{-- Nombre (empleado) --}}
             <div class="flex-1 relative">
                 <input
                     type="text"
@@ -87,18 +100,24 @@
                     autocomplete="off"
                 />
                 <input type="hidden" wire:model="employeeId" />
-                @if($employees->isNotEmpty() && strlen($nombre) > 0)
-                    <div class="absolute z-10 mt-1 w-full bg-white border rounded shadow">
-                        @foreach($employees as $employee)
-                            <button type="button" wire:click="selectEmployee({{ $employee->id }})" class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm">
+
+                @if ($employees->isNotEmpty() && strlen($nombre) > 0)
+                    <div class="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+                        @foreach ($employees as $employee)
+                            <button
+                                type="button"
+                                wire:click="selectEmployee({{ $employee->id }})"
+                                class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                            >
                                 {{ $employee->full_name }}
-                                @if($employee->position)
+                                @if ($employee->position)
                                     <span class="text-gray-500 text-xs"> · {{ $employee->position }}</span>
                                 @endif
                             </button>
                         @endforeach
                     </div>
                 @endif
+
                 @error('employeeId')
                     <div class="text-red-600 text-xs mt-1">Selecciona un empleado válido</div>
                 @enderror

@@ -15,24 +15,24 @@ class Form extends Component
     public ?Memorandum $memorandum = null;
     public bool $isEdit = false;
 
-    // 🔹 Campos “clásicos” del modelo
+    // Campos “clásicos” del modelo
     public string $subject = '';
-    public ?string $issued_at = null; // si luego quieres usar datetime-local
-    public string $body = '';         // cuerpo completo (lo armamos desde los campos de abajo)
+    public ?string $issued_at = null;
+    public string $body = '';
 
-    // 🔹 Campos de la UI tipo P3 (solo se guardan “empaquetados” en body)
-    public string $puesto = '';
+    // Campos tipo P3 (se empaquetan en body)
+    public string $puesto = '';          // Nombre del cliente seleccionado
     public string $cargo = '';
     public string $nombre = '';
     public string $cedula = '';
-    public ?int $clientId = null;         // cliente asociado al puesto
-    public ?int $employeeId = null;       // empleado seleccionado
-    public ?int $responsable = null;      // id de usuario responsable
-    public string $prioridad = 'media';   // urgente / alta / media / baja
-    public string $descripcion = '';      // texto libre principal
+    public ?int $clientId = null;
+    public ?int $employeeId = null;
+    public ?int $responsable = null;
+    public string $prioridad = 'media';
+    public string $descripcion = '';
 
-    public string $selectedClientName = '';
-    public string $selectedEmployeeName = '';
+    // Texto que el usuario ESCRIBE para buscar el cliente
+    public string $puestoSearch = '';
 
     public function mount(?Memorandum $memorandum = null): void
     {
@@ -42,12 +42,10 @@ class Form extends Component
         if ($this->isEdit) {
             $this->memorandum->loadMissing(['employee.client']);
 
-            // Mapeo básico para edición (no intentamos parsear campos, solo llenamos lo mínimo)
             $this->subject     = $this->memorandum->subject;
             $this->descripcion = $this->memorandum->body;
             $this->issued_at   = optional($this->memorandum->issued_at)?->format('Y-m-d\TH:i');
 
-            // Si el memorando ya tenía empleado asociado, rellenamos los campos derivados
             if ($this->memorandum->employee) {
                 $employee            = $this->memorandum->employee;
                 $this->employeeId    = $employee->id;
@@ -56,10 +54,9 @@ class Form extends Component
                 $this->cargo         = $employee->service_type ?? $employee->position ?? '';
                 $this->clientId      = $employee->client_id;
                 $this->puesto        = $employee->client?->business_name ?? '';
+                $this->puestoSearch  = $this->puesto; // que el input muestre el cliente actual
             }
         } else {
-
-            // Valores por defecto
             $this->prioridad = 'media';
         }
     }
@@ -114,12 +111,10 @@ class Form extends Component
             ->when($client->id, fn ($query) => $query->where('client_id', $client->id))
             ->findOrFail($this->employeeId);
 
-        // Buscamos el responsable (usuario) solo para usar su nombre en el texto
         $responsableUser = $this->responsable
             ? User::query()->where('company_id', $companyId)->find($this->responsable)
             : null;
 
-        // 🔹 Armamos el cuerpo completo con todos los campos “estilo P3”
         $body = "Puesto: {$client->business_name}\n"
             . "Cargo: {$this->cargo}\n"
             . "Nombre: {$this->nombre}\n"
@@ -131,10 +126,10 @@ class Form extends Component
         if ($this->isEdit) {
             $memorandum = $this->memorandum;
 
-            $memorandum->subject = $this->subject;
-            $memorandum->body    = $body;
+            $memorandum->subject    = $this->subject;
+            $memorandum->body       = $body;
             $memorandum->employee_id = $employee->id;
-            $memorandum->issued_at = $this->issued_at
+            $memorandum->issued_at  = $this->issued_at
                 ? \Carbon\Carbon::parse($this->issued_at)
                 : $memorandum->issued_at;
 
@@ -144,14 +139,13 @@ class Form extends Component
         } else {
             $memorandum = new Memorandum();
 
-            $memorandum->company_id = $user->company_id;
-            $memorandum->user_id    = $user->id; // autor
+            $memorandum->company_id  = $user->company_id;
+            $memorandum->user_id     = $user->id;
             $memorandum->employee_id = $employee->id;
-
-            $memorandum->subject = $this->subject;
-            $memorandum->body    = $body;
-            $memorandum->status  = MemorandumStatus::DRAFT;
-            $memorandum->issued_at = $this->issued_at
+            $memorandum->subject     = $this->subject;
+            $memorandum->body        = $body;
+            $memorandum->status      = MemorandumStatus::DRAFT;
+            $memorandum->issued_at   = $this->issued_at
                 ? \Carbon\Carbon::parse($this->issued_at)
                 : null;
 
@@ -169,12 +163,11 @@ class Form extends Component
 
         $clients = Client::query()
             ->forCompany($companyId)
-            ->search($this->puesto)
+            ->search($this->puestoSearch) // 👈 usamos el texto que se escribe
             ->orderBy('business_name')
             ->limit(10)
             ->get();
 
-        // Si más adelante quieres usar empleados, aquí los tienes disponibles:
         $employees = Employee::query()
             ->where('company_id', $companyId)
             ->when($this->clientId, fn ($query) => $query->where('client_id', $this->clientId))
@@ -184,16 +177,15 @@ class Form extends Component
             ->limit(10)
             ->get();
 
-        // Responsables (usuarios de la empresa)
         $usuarios = User::query()
             ->where('company_id', $companyId)
             ->orderBy('name')
             ->get();
 
         return view('livewire.memorandums.form', [
-            'clients'    => $clients,
-            'employees'  => $employees,
-            'usuarios'   => $usuarios,
+            'clients'   => $clients,
+            'employees' => $employees,
+            'usuarios'  => $usuarios,
         ]);
     }
 
@@ -208,6 +200,9 @@ class Form extends Component
 
         $this->clientId = $client->id;
         $this->puesto   = $client->business_name;
+
+        // lo que se muestra en el input
+        $this->puestoSearch = $this->puesto;
 
         $this->resetEmployeeSelection();
     }
@@ -230,10 +225,14 @@ class Form extends Component
         $this->cargo      = $employee->service_type ?? $employee->position ?? '';
     }
 
-    public function updatedPuesto(): void
+    public function updatedPuestoSearch($value): void
     {
-        $this->clientId = null;
-        $this->resetEmployeeSelection();
+        // Si el usuario borra el texto, limpiamos selección
+        if ($value === '') {
+            $this->clientId = null;
+            $this->puesto   = '';
+            $this->resetEmployeeSelection();
+        }
     }
 
     public function updatedNombre(): void
