@@ -5,8 +5,7 @@ use App\Http\Controllers\Company\ClientController;
 use App\Http\Controllers\Company\DashboardController;
 use App\Http\Controllers\Company\MemorandumController;
 use App\Http\Controllers\Company\EmployeeController;
-use App\Livewire\Memorandums\Board;
-use App\Livewire\Memorandums\Finalized;
+use App\Enums\MemorandumStatus;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,16 +50,10 @@ Route::middleware(['auth', 'role:Admin Empresa'])
 
         // ---- MEMORÁNDUMS ----
         Route::prefix('memorandums')->name('memorandums.')->group(function () {
-            // 🟢 PRIMERO: rutas específicas (no deben ir después de /{memorandum})
-            Route::get('/board', Board::class)->name('board');
-            Route::get('/finalized', Finalized::class)->name('finalized');
-
-            // CRUD clásico
             Route::get('/', [MemorandumController::class, 'index'])->name('index');
             Route::get('/create', [MemorandumController::class, 'create'])->name('create');
             Route::post('/', [MemorandumController::class, 'store'])->name('store');
 
-            // Rutas con parámetro -> las dejamos al final y las restringimos a números
             Route::get('/{memorandum}', [MemorandumController::class, 'show'])
                 ->whereNumber('memorandum')
                 ->name('show');
@@ -73,8 +66,13 @@ Route::middleware(['auth', 'role:Admin Empresa'])
                 ->whereNumber('memorandum')
                 ->name('update');
 
-            Route::post('/{memorandum}/status', [MemorandumController::class, 'updateStatus'])
+            Route::delete('/{memorandum}', [MemorandumController::class, 'destroy'])
                 ->whereNumber('memorandum')
+                ->name('destroy');
+
+            Route::post('/{memorandum}/status/{status}', [MemorandumController::class, 'changeStatus'])
+                ->whereNumber('memorandum')
+                ->whereIn('status', collect(MemorandumStatus::cases())->map->value->all())
                 ->name('status');
         });
 

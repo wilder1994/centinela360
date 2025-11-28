@@ -82,13 +82,8 @@
 
             {{-- Memorándums --}}
             <a href="{{ route('company.memorandums.index') }}"
-               class="{{ request()->routeIs('company.memorandums.index') ? 'active' : '' }}">
-                Memorándums (lista)
-            </a>
-
-            <a href="{{ route('company.memorandums.board') }}"
-               class="{{ request()->routeIs('company.memorandums.board') ? 'active' : '' }}">
-                🧩 Tablero de memorandums
+               class="{{ request()->routeIs('company.memorandums.*') ? 'active' : '' }}">
+                Memorándums
             </a>
 
             <a href="#">
