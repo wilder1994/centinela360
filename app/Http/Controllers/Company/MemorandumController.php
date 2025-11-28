@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Company;
 
 use App\Enums\MemorandumStatus;
-use App\Events\MemorandumCreated;
-use App\Events\MemorandumUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMemorandumRequest;
 use App\Http\Requests\UpdateMemorandumRequest;
@@ -12,12 +10,10 @@ use App\Http\Requests\UpdateMemorandumStatusRequest;
 use App\Models\Employee;
 use App\Models\Memorandum;
 use App\Models\MemorandumStatusHistory;
-use App\Notifications\MemorandumNotification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 
 class MemorandumController extends Controller
 {
@@ -28,59 +24,17 @@ class MemorandumController extends Controller
 
     public function index(Request $request): View
     {
-        $user = $request->user();
-        $company = $user->company;
+        $companyId = $request->user()->company_id;
 
-        $search = $request->string('search')->toString();
-        $status = $request->string('status')->toString();
-
-        $query = Memorandum::query()
-            ->with(['author', 'employee'])
-            ->forCompany($company->id)
-            ->search($search);
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('issued_at', '>=', $request->date('date_from'));
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('issued_at', '<=', $request->date('date_to'));
-        }
-
-        $memorandums = $query
+        $memorandums = Memorandum::query()
+            ->with(['employee'])
+            ->forCompany($companyId)
             ->latest('issued_at')
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
-
-        $statusCounts = Memorandum::forCompany($company->id)
-            ->select('status', DB::raw('count(*) as total'))
-            ->groupBy('status')
-            ->pluck('total', 'status');
-
-        $recentUpdates = MemorandumStatusHistory::with(['memorandum', 'changer'])
-            ->whereHas('memorandum', fn ($builder) => $builder->forCompany($company->id))
-            ->latest()
-            ->limit(5)
-            ->get();
+            ->paginate(15);
 
         return view('company.memorandums.index', [
-            'company' => $company,
             'memorandums' => $memorandums,
             'statusOptions' => MemorandumStatus::options(),
-            'statusCounts' => $statusCounts,
-            'totalMemorandums' => Memorandum::forCompany($company->id)->count(),
-            'recentUpdates' => $recentUpdates,
-            'filters' => [
-                'search' => $search,
-                'status' => $status,
-                'date_from' => $request->input('date_from'),
-                'date_to' => $request->input('date_to'),
-            ],
         ]);
     }
 
@@ -101,19 +55,16 @@ class MemorandumController extends Controller
     public function store(StoreMemorandumRequest $request): RedirectResponse
     {
         $user = $request->user();
-        $company = $user->company;
         $data = $request->validated();
 
-        $memorandum = DB::transaction(function () use ($data, $user, $company, $request) {
-            $status = $data['status'] ?? MemorandumStatus::DRAFT->value;
-
+        $memorandum = DB::transaction(function () use ($data, $user) {
             $memorandum = Memorandum::create([
-                'company_id' => $company->id,
+                'company_id' => $user->company_id,
                 'user_id' => $user->id,
                 'employee_id' => $data['employee_id'] ?? null,
                 'subject' => $data['subject'],
                 'body' => $data['body'],
-                'status' => $status,
+                'status' => $data['status'] ?? MemorandumStatus::DRAFT,
                 'issued_at' => $data['issued_at'] ?? now(),
                 'acknowledged_at' => $data['acknowledged_at'] ?? null,
             ]);
@@ -123,28 +74,22 @@ class MemorandumController extends Controller
                 'from_status' => null,
                 'to_status' => $memorandum->status->value,
                 'changed_by' => $user->id,
-                'notes' => $request->input('notes'),
+                'notes' => $data['notes'] ?? null,
             ]);
 
             return $memorandum;
         });
 
-        $memorandum->load(['author', 'employee', 'statusHistories.changer']);
-
-        event(new MemorandumCreated($memorandum));
-
-        Notification::send($user, new MemorandumNotification($memorandum, 'created'));
-
         return redirect()
             ->route('company.memorandums.show', $memorandum)
-            ->with('status', 'Memorándum registrado correctamente.');
+            ->with('status', 'Memorándum creado correctamente.');
     }
 
     public function show(Request $request, Memorandum $memorandum): View
     {
         $this->authorize('view', $memorandum);
 
-        $memorandum->load(['author', 'employee', 'statusHistories.changer']);
+        $memorandum->load(['employee', 'statusHistories.changer']);
 
         return view('company.memorandums.show', [
             'memorandum' => $memorandum,
@@ -161,8 +106,6 @@ class MemorandumController extends Controller
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();
-
-        $memorandum->load(['author', 'employee']);
 
         return view('company.memorandums.edit', [
             'memorandum' => $memorandum,
@@ -182,15 +125,13 @@ class MemorandumController extends Controller
             $memorandum->fill([
                 'subject' => $data['subject'] ?? $memorandum->subject,
                 'body' => $data['body'] ?? $memorandum->body,
-                'employee_id' => array_key_exists('employee_id', $data)
-                    ? $data['employee_id']
-                    : $memorandum->employee_id,
+                'employee_id' => $data['employee_id'] ?? $memorandum->employee_id,
                 'issued_at' => $data['issued_at'] ?? $memorandum->issued_at,
                 'acknowledged_at' => $data['acknowledged_at'] ?? $memorandum->acknowledged_at,
             ]);
 
-            if (array_key_exists('status', $data) && $data['status'] !== $previousStatus->value) {
-                $memorandum->status = $data['status'];
+            if (array_key_exists('status', $data)) {
+                $memorandum->status = MemorandumStatus::from($data['status']);
             }
 
             if ($memorandum->status === MemorandumStatus::ACKNOWLEDGED && !$memorandum->acknowledged_at) {
@@ -199,40 +140,35 @@ class MemorandumController extends Controller
 
             $memorandum->save();
 
-            if (array_key_exists('status', $data) && $data['status'] !== $previousStatus->value) {
+            if ($memorandum->status !== $previousStatus) {
                 MemorandumStatusHistory::create([
                     'memorandum_id' => $memorandum->id,
                     'from_status' => $previousStatus->value,
                     'to_status' => $memorandum->status->value,
                     'changed_by' => $request->user()->id,
-                    'notes' => $request->input('notes'),
+                    'notes' => $data['notes'] ?? null,
                 ]);
             }
         });
-
-        $memorandum->refresh()->load(['author', 'employee', 'statusHistories.changer']);
-
-        event(new MemorandumUpdated($memorandum));
-
-        Notification::send($request->user(), new MemorandumNotification($memorandum, 'updated'));
 
         return redirect()
             ->route('company.memorandums.show', $memorandum)
             ->with('status', 'Memorándum actualizado correctamente.');
     }
 
-    public function updateStatus(UpdateMemorandumStatusRequest $request, Memorandum $memorandum): RedirectResponse
+    public function changeStatus(UpdateMemorandumStatusRequest $request, Memorandum $memorandum, string $status): RedirectResponse
     {
         $this->authorize('update', $memorandum);
 
-        $newStatus = MemorandumStatus::from($request->validated('status'));
-        $previousStatus = $memorandum->status;
+        $newStatus = MemorandumStatus::from($status);
 
-        if ($previousStatus === $newStatus) {
-            return back()->with('status', 'El memorándum ya se encuentra en el estado seleccionado.');
+        if ($memorandum->status === $newStatus) {
+            return back()->with('status', 'El memorándum ya se encuentra en ese estado.');
         }
 
-        DB::transaction(function () use ($memorandum, $newStatus, $previousStatus, $request) {
+        DB::transaction(function () use ($memorandum, $newStatus, $request) {
+            $previousStatus = $memorandum->status;
+
             $memorandum->status = $newStatus;
 
             if ($newStatus === MemorandumStatus::ACKNOWLEDGED && !$memorandum->acknowledged_at) {
@@ -250,14 +186,19 @@ class MemorandumController extends Controller
             ]);
         });
 
-        $memorandum->refresh()->load(['author', 'employee', 'statusHistories.changer']);
-
-        event(new MemorandumUpdated($memorandum));
-
-        Notification::send($request->user(), new MemorandumNotification($memorandum, 'updated'));
-
         return redirect()
             ->route('company.memorandums.show', $memorandum)
-            ->with('status', 'El estado del memorándum se actualizó correctamente.');
+            ->with('status', 'Estado actualizado correctamente.');
+    }
+
+    public function destroy(Request $request, Memorandum $memorandum): RedirectResponse
+    {
+        $this->authorize('update', $memorandum);
+
+        $memorandum->delete();
+
+        return redirect()
+            ->route('company.memorandums.index')
+            ->with('status', 'Memorándum eliminado.');
     }
 }
