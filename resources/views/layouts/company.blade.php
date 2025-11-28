@@ -80,12 +80,6 @@
                 Clientes
             </a>
 
-            {{-- Memorándums --}}
-            <a href="{{ route('company.memorandums.index') }}"
-               class="{{ request()->routeIs('company.memorandums.*') ? 'active' : '' }}">
-                Memorándums
-            </a>
-
             <a href="#">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3.75A.75.75 0 0 1 3.75 3h16.5a.75.75 0 0 1 .75.75V12h-18V3.75Z"/><path d="M3 13.5h18v2.25a3 3 0 0 1-3 3h-12a3 3 0 0 1-3-3V13.5Z"/></svg>
                 Estadísticas

@@ -14,7 +14,6 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             UserSeeder::class,
             EmployeeSeeder::class,
-            MemorandumSeeder::class,
         ]);
     }
 }
