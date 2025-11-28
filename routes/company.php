@@ -3,9 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Company\ClientController;
 use App\Http\Controllers\Company\DashboardController;
-use App\Http\Controllers\Company\MemorandumController;
 use App\Http\Controllers\Company\EmployeeController;
-use App\Enums\MemorandumStatus;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,34 +44,6 @@ Route::middleware(['auth', 'role:Admin Empresa'])
             Route::get('/{client}/edit', [ClientController::class, 'edit'])->name('edit');
             Route::put('/{client}', [ClientController::class, 'update'])->name('update');
             Route::delete('/{client}', [ClientController::class, 'destroy'])->name('destroy');
-        });
-
-        // ---- MEMORÁNDUMS ----
-        Route::prefix('memorandums')->name('memorandums.')->group(function () {
-            Route::get('/', [MemorandumController::class, 'index'])->name('index');
-            Route::get('/create', [MemorandumController::class, 'create'])->name('create');
-            Route::post('/', [MemorandumController::class, 'store'])->name('store');
-
-            Route::get('/{memorandum}', [MemorandumController::class, 'show'])
-                ->whereNumber('memorandum')
-                ->name('show');
-
-            Route::get('/{memorandum}/edit', [MemorandumController::class, 'edit'])
-                ->whereNumber('memorandum')
-                ->name('edit');
-
-            Route::put('/{memorandum}', [MemorandumController::class, 'update'])
-                ->whereNumber('memorandum')
-                ->name('update');
-
-            Route::delete('/{memorandum}', [MemorandumController::class, 'destroy'])
-                ->whereNumber('memorandum')
-                ->name('destroy');
-
-            Route::post('/{memorandum}/status/{status}', [MemorandumController::class, 'changeStatus'])
-                ->whereNumber('memorandum')
-                ->whereIn('status', collect(MemorandumStatus::cases())->map->value->all())
-                ->name('status');
         });
 
         // Aquí puedes adicionar más secciones del panel de empresa en el futuro...
