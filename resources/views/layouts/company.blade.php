@@ -52,6 +52,12 @@
                 Programación
             </a>
 
+            <a href="{{ route('company.memorandums.index') }}"
+               class="flex items-center gap-3 px-6 py-3 mt-2 {{ request()->routeIs('company.memorandums.*') ? 'active' : '' }}">
+                <i class="fas fa-file-alt w-5"></i>
+                <span>Memorandos</span>
+            </a>
+
             <a href="#">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M11.7 1.53a.75.75 0 0 1 .6 0l8.25 3.6a.75.75 0 0 1 .45.69v5.19c0 3.84-2.72 7.93-8.47 10.62a.75.75 0 0 1-.66 0C6.12 18.94 3.4 14.85 3.4 11.01V5.82a.75.75 0 0 1 .45-.69l8.25-3.6Z"/></svg>
                 Supervisión

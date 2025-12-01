@@ -11,9 +11,12 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CompanySeeder::class,
             RoleSeeder::class,
+            RolesSeeder::class,
             PermissionSeeder::class,
-            UserSeeder::class,
+            UsersSeeder::class,
+            ClientSeeder::class,
             EmployeeSeeder::class,
+            MemorandumsSeeder::class,
         ]);
     }
 }

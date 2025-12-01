@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Company;
+use App\Models\Client;
 use App\Models\Employee;
 use Illuminate\Database\Seeder;
 
@@ -16,17 +17,17 @@ class EmployeeSeeder extends Seeder
             return;
         }
 
-        $faker = fake('es_CO');
+        $clients = Client::factory()
+            ->count(3)
+            ->create(['company_id' => $company->id]);
 
         foreach (range(1, 8) as $index) {
-            Employee::create([
-                'company_id' => $company->id,
-                'first_name' => $faker->firstName(),
-                'last_name' => $faker->lastName(),
-                'email' => $faker->unique()->safeEmail(),
-                'phone' => $faker->phoneNumber(),
-                'position' => $faker->jobTitle(),
-            ]);
+            $clientId = $clients->isNotEmpty() ? $clients->random()->id : null;
+
+            Employee::factory()
+                ->for($company)
+                ->state(['client_id' => $clientId])
+                ->create();
         }
     }
 }

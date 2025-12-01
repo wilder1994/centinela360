@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -62,5 +63,15 @@ class User extends Authenticatable
         return $this->roles()->whereHas('permissions', function ($query) use ($permissionCode) {
             $query->where('code', $permissionCode);
         })->exists();
+    }
+
+    public function scopeResponsables(Builder $query): Builder
+    {
+        $roles = config('memorandums.responsable_roles', []);
+
+        return $query
+            ->where('active', true)
+            ->when(auth()->user()?->company_id, fn ($builder) => $builder->where('company_id', auth()->user()->company_id))
+            ->whereHas('roles', fn ($builder) => $builder->whereIn('name', $roles));
     }
 }

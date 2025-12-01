@@ -14,6 +14,7 @@ class Employee extends Model
 
     protected $fillable = [
         'company_id',
+        'client_id',
         'first_name',
         'last_name',
         'email',
@@ -26,15 +27,13 @@ class Employee extends Model
         'birth_date',
         'start_date',
         'badge_expires_at',
-        'client_id',
         'service_type',
         'status',
         'emergency_contact_name',
         'emergency_contact_phone',
         'notes',
-        'photo_path',          // 👈 AGREGA ESTA LÍNEA
+        'photo_path',
     ];
-
 
     protected $casts = [
         'birth_date' => 'date',
@@ -46,12 +45,12 @@ class Employee extends Model
 
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class);
+        return $this->belongsTo(Client::class, 'client_id');
     }
 
     public function fullName(): Attribute

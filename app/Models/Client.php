@@ -38,6 +38,11 @@ class Client extends Model
         return $this->hasMany(ClientService::class);
     }
 
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class, 'client_id');
+    }
+
     public function scopeForCompany($query, int $companyId)
     {
         return $query->where('company_id', $companyId);

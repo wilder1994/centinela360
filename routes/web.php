@@ -19,9 +19,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// 🧭 Dashboard por defecto (solo si no aplica otro rol)
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    // Usamos la lógica de redirección por rol
+    return redirect()->route('redirect');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // 👤 Rutas de perfil del usuario autenticado
@@ -50,8 +50,8 @@ Route::get('/redirect', function () {
     }
 
     // 🔹 Si no cumple ninguna de las anteriores → Dashboard genérico
-    return redirect('/dashboard');
-})->middleware('auth')->name('redirect');
+    return redirect()->route('company.dashboard');
+})->middleware(['auth'])->name('redirect');
 
 
 // ⚙️ Archivos de rutas específicas
