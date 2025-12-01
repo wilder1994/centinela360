@@ -72,7 +72,8 @@
                 Empleados
             </a>
 
-            <a href="#">
+            <a href="{{ route('company.users.index') }}"
+               class="flex items-center gap-3 px-6 py-3 mt-2 {{ request()->routeIs('company.users.*') ? 'active' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 6a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z"/><path d="M3.75 20.1a8.25 8.25 0 0 1 16.5 0v.65a.75.75 0 0 1-.75.75h-15a.75.75 0 0 1-.75-.75v-.65Z"/></svg>
                 Usuarios
             </a>

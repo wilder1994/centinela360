@@ -64,3 +64,12 @@ Route::middleware(['auth', 'role:Admin Empresa'])
         // Aqui puedes adicionar mas secciones del panel de empresa en el futuro...
 
     });
+
+Route::middleware(['auth', 'role:Admin Empresa'])
+    ->prefix('company')
+    ->name('company.')
+    ->group(function () {
+        Route::get('users', \App\Livewire\Company\Users\Index::class)->name('users.index');
+        Route::get('users/create', \App\Livewire\Company\Users\Create::class)->name('users.create');
+        Route::get('users/{user}/edit', \App\Livewire\Company\Users\Edit::class)->name('users.edit');
+    });

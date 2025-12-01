@@ -31,6 +31,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'active' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     // 🔗 Un usuario pertenece a una empresa
