@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
-use App\Models\Report; // Si aún no existe, luego lo crearemos
 
 class DashboardController extends Controller
 {
@@ -18,9 +16,10 @@ class DashboardController extends Controller
             abort(403, 'El usuario no está asociado a ninguna empresa.');
         }
 
+        $reportModel = 'App\\Models\\Report';
         $totalUsers = User::where('company_id', $company->id)->count();
-        $totalReports = class_exists(Report::class)
-            ? Report::where('company_id', $company->id)->count()
+        $totalReports = class_exists($reportModel)
+            ? $reportModel::where('company_id', $company->id)->count()
             : 0;
         $totalAlerts = 0;
 
