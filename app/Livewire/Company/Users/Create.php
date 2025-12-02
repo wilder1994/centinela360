@@ -19,7 +19,13 @@ class Create extends Component
 
     public function mount(): void
     {
-        $this->roles = Role::orderBy('name')->pluck('name', 'id')->toArray();
+        $auth = Auth::user();
+        abort_if(! $auth?->isCompanyAdmin(), 403);
+
+        $this->roles = Role::where('id', '!=', 1)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
     }
 
     public function save()
@@ -28,8 +34,10 @@ class Create extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'exists:roles,id'],
+            'role' => ['required', 'exists:roles,id', 'not_in:1'],
         ]);
+
+        abort_if($this->role == 1, 403);
 
         $user = User::create([
             'name' => $this->name,

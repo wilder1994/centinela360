@@ -18,6 +18,9 @@ class StoreMemorandumRequest extends FormRequest
 
         return [
             'puesto' => ['required', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'cedula' => ['nullable', 'string', 'max:255'],
+            'cargo' => ['nullable', 'string', 'max:255'],
             'title' => ['required', 'string', 'max:255'],
             'body' => ['nullable', 'string'],
             'assigned_to' => [

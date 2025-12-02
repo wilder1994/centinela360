@@ -19,6 +19,7 @@ class Board extends Component
     public bool $mostrarModal = false;
     public bool $mostrarModalDetalles = false;
     public ?Memorandum $ticketDetalle = null;
+    public ?int $ticketActualId = null;
 
     public bool $cambioEstado = false;
     public string $nuevoEstado = '';
@@ -124,6 +125,7 @@ class Board extends Component
 
     public function confirmarCambioEstado($id, $estado, $cambio): void
     {
+        $this->ticketActualId = $id;
         $this->nuevoEstado = $estado;
         $this->cambioEstado = (bool) $cambio;
         $this->comentario = '';
@@ -133,16 +135,83 @@ class Board extends Component
 
     public function guardarCambioEstado(): void
     {
-        $this->mostrarModal = false;
-        $this->comentario = '';
-        $this->responsable = null;
+        $this->validate([
+            'comentario' => ['required', 'string', 'min:3'],
+            'responsable' => ['required', 'integer', 'exists:users,id'],
+        ], [
+            'comentario.required' => 'El comentario es obligatorio.',
+            'responsable.required' => 'Debe asignar un responsable.',
+        ]);
+
+        $memo = Memorandum::with('logs')->find($this->ticketActualId);
+        if (! $memo) {
+            $this->resetModal();
+            return;
+        }
+
+        $estadoAnterior = $memo->estado;
+        // Primer comentario en pendiente pasa a en_proceso automáticamente
+        $estadoDestino = $estadoAnterior === 'pending'
+            ? 'en_proceso'
+            : ($this->cambioEstado ? $this->nuevoEstado : $estadoAnterior);
+
+        $memo->assigned_to = $this->responsable;
+        $memo->estado = $estadoDestino;
+        $memo->save();
+
+        $memo->logs()->create([
+            'user_id' => auth()->id(),
+            'estado_anterior' => $estadoAnterior,
+            'estado_nuevo' => $estadoDestino,
+            'comentario' => $this->comentario,
+        ]);
+
+        $this->resetModal();
+        $this->cargarDatos();
     }
 
     public function finalizarTicketDesdeModal(): void
     {
+        $this->validate([
+            'comentario' => ['required', 'string', 'min:3'],
+            'responsable' => ['required', 'integer', 'exists:users,id'],
+        ], [
+            'comentario.required' => 'El comentario es obligatorio.',
+            'responsable.required' => 'Debe asignar un responsable.',
+        ]);
+
+        $memo = Memorandum::with('logs')->find($this->ticketActualId);
+        if (! $memo) {
+            $this->resetModal();
+            return;
+        }
+
+        $estadoAnterior = $memo->estado;
+        $estadoDestino = 'finalizado';
+
+        $memo->assigned_to = $this->responsable;
+        $memo->estado = $estadoDestino;
+        $memo->save();
+
+        $memo->logs()->create([
+            'user_id' => auth()->id(),
+            'estado_anterior' => $estadoAnterior,
+            'estado_nuevo' => $estadoDestino,
+            'comentario' => $this->comentario,
+        ]);
+
+        $this->resetModal();
+        $this->cargarDatos();
+    }
+
+    private function resetModal(): void
+    {
         $this->mostrarModal = false;
         $this->comentario = '';
         $this->responsable = null;
+        $this->ticketActualId = null;
+        $this->nuevoEstado = '';
+        $this->cambioEstado = false;
     }
 
     public function render()

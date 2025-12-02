@@ -20,7 +20,7 @@ class User extends Authenticatable
         'company_id',
         'phone',
         'active',
-        'photo', // 👈 ESTE FALTABA
+        'photo',
     ];
 
     protected $hidden = [
@@ -34,31 +34,56 @@ class User extends Authenticatable
         'is_active' => 'boolean',
     ];
 
-    // 🔗 Un usuario pertenece a una empresa
+    // Un usuario pertenece a una empresa
     public function company()
     {
         return $this->belongsTo(Company::class);
     }
 
-    // 🔗 Un usuario puede tener varios roles
+    // Un usuario puede tener varios roles (pivot role_user)
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'role_user');
+        return $this->belongsToMany(Role::class, 'role_user')->withTimestamps();
     }
 
-    // 🔗 Un usuario tiene permisos a través de sus roles
+    // Verificar si tiene un rol por nombre
+    public function hasRole(string $roleName): bool
+    {
+        if ($this->relationLoaded('roles')) {
+            return $this->roles->contains('name', $roleName);
+        }
+
+        return $this->roles()->where('name', $roleName)->exists();
+    }
+
+    // Verificar si tiene un rol por id
+    public function hasRoleId(int $roleId): bool
+    {
+        if ($this->relationLoaded('roles')) {
+            return $this->roles->contains('id', $roleId);
+        }
+
+        return $this->roles()->where('roles.id', $roleId)->exists();
+    }
+
+    // Roles base (tabla roles.id): 1=Super Admin, 2=Admin Empresa
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRoleId(1);
+    }
+
+    public function isCompanyAdmin(): bool
+    {
+        return $this->hasRoleId(2);
+    }
+
+    // Un usuario tiene permisos a través de sus roles
     public function permissions()
     {
         return $this->roles()->with('permissions')->get()->pluck('permissions')->flatten()->unique('id');
     }
 
-    // 🔐 Verificar si tiene un rol
-    public function hasRole($roleName)
-    {
-        return $this->roles()->where('name', $roleName)->exists();
-    }
-
-    // 🔐 Verificar si tiene un permiso
+    // Verificar si tiene un permiso
     public function hasPermission($permissionCode)
     {
         return $this->roles()->whereHas('permissions', function ($query) use ($permissionCode) {

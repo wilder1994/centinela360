@@ -20,13 +20,15 @@
         <div class="flex flex-wrap items-center gap-2">
             <a href="{{ route('company.memorandums.create') }}"
                class="inline-flex items-center px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition shadow">
-                <span class="mr-2 text-lg leading-none">＋</span>
-                Nuevo memorando
+                <span class="icon-tight icon-safe bg-white/10 border-white/20">
+                    <x-icon name="doc-plus" class="w-4 h-4" />
+                </span>
+                <span class="ml-2">Nuevo memorando</span>
             </a>
         </div>
     </div>
 
-    {{-- Tarjetas de KPIs --}}
+    {{-- Tarjetas de KPIs (iconos via <x-icon> para mantener paleta neutra sin heredar colores de empresa) --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-6">
         {{-- Pendientes --}}
         <a href="{{ route('company.memorandums.pendientes') }}"
@@ -40,8 +42,8 @@
                         {{ number_format($pendiente) }}
                     </p>
                 </div>
-                <div class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blue-50">
-                    <span class="text-blue-500 text-lg">⏳</span>
+                <div class="icon-tight icon-safe bg-blue-50 border-blue-100">
+                    <x-icon name="clock" class="w-4 h-4" />
                 </div>
             </div>
             <p class="mt-3 text-xs text-[var(--primary)] font-semibold">Ver listado →</p>
@@ -59,8 +61,8 @@
                         {{ number_format($enProceso) }}
                     </p>
                 </div>
-                <div class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-50">
-                    <span class="text-amber-500 text-lg">🔄</span>
+                <div class="icon-tight icon-safe bg-amber-50 border-amber-100">
+                    <x-icon name="progress" class="w-4 h-4" />
                 </div>
             </div>
             <p class="mt-3 text-xs text-[var(--primary)] font-semibold">Ver listado →</p>
@@ -78,8 +80,8 @@
                         {{ number_format($finalizado) }}
                     </p>
                 </div>
-                <div class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-green-50">
-                    <span class="text-green-500 text-lg">✅</span>
+                <div class="icon-tight icon-safe bg-green-50 border-green-100">
+                    <x-icon name="check" class="w-4 h-4" />
                 </div>
             </div>
             <p class="mt-3 text-xs text-[var(--primary)] font-semibold">Ver listado →</p>
@@ -96,8 +98,8 @@
                         {{ number_format($total) }}
                     </p>
                 </div>
-                <div class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-50">
-                    <span class="text-slate-500 text-lg">📊</span>
+                <div class="icon-tight icon-safe bg-slate-50 border-slate-200">
+                    <x-icon name="memo" class="w-4 h-4" />
                 </div>
             </div>
             <p class="mt-3 text-xs text-gray-400">
@@ -111,8 +113,8 @@
         {{-- Indicadores por usuario --}}
         <div class="rounded-2xl border bg-white p-4 sm:p-5 shadow-sm">
             <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500 text-sm">
-                    👥
+                <span class="icon-tight icon-safe bg-slate-100 border-slate-200">
+                    <x-icon name="users" class="w-4 h-4" />
                 </span>
                 Indicadores por usuario
             </h2>
@@ -173,8 +175,8 @@
         {{-- Últimos movimientos --}}
         <div class="rounded-2xl border bg-white p-4 sm:p-5 shadow-sm">
             <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500 text-sm">
-                    🕒
+                <span class="icon-tight icon-safe bg-slate-100 border-slate-200">
+                    <x-icon name="memo" class="w-4 h-4" />
                 </span>
                 Últimos movimientos
             </h2>

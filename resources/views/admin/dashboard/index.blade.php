@@ -6,7 +6,7 @@
     <!-- Título principal -->
     <h1 class="text-3xl font-bold text-gray-800">Panel de control</h1>
 
-    <!-- Tarjetas resumen -->
+    <!-- Tarjetas resumen (iconos centralizados en /components/icons con fondos neutros) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
             <div class="flex items-center justify-between">
@@ -14,8 +14,8 @@
                     <p class="text-sm text-gray-500 uppercase font-semibold">Empresas</p>
                     <h2 class="text-3xl font-bold text-gray-800">{{ $totalCompanies }}</h2>
                 </div>
-                <div class="p-3 bg-cyan-100 text-cyan-600 rounded-lg">
-                    <i class="fas fa-building text-2xl"></i>
+                <div class="icon-chip icon-safe bg-cyan-50 border-cyan-100">
+                    <x-icon name="briefcase" class="w-6 h-6" />
                 </div>
             </div>
         </div>
@@ -26,8 +26,8 @@
                     <p class="text-sm text-gray-500 uppercase font-semibold">Usuarios</p>
                     <h2 class="text-3xl font-bold text-gray-800">{{ $totalUsers }}</h2>
                 </div>
-                <div class="p-3 bg-indigo-100 text-indigo-600 rounded-lg">
-                    <i class="fas fa-users text-2xl"></i>
+                <div class="icon-chip icon-safe bg-indigo-50 border-indigo-100">
+                    <x-icon name="users" class="w-6 h-6" />
                 </div>
             </div>
         </div>
@@ -38,8 +38,8 @@
                     <p class="text-sm text-gray-500 uppercase font-semibold">Informes</p>
                     <h2 class="text-3xl font-bold text-gray-800">{{ $totalReports }}</h2>
                 </div>
-                <div class="p-3 bg-purple-100 text-purple-600 rounded-lg">
-                    <i class="fas fa-file-alt text-2xl"></i>
+                <div class="icon-chip icon-safe bg-purple-50 border-purple-100">
+                    <x-icon name="file" class="w-6 h-6" />
                 </div>
             </div>
         </div>
@@ -50,8 +50,8 @@
                     <p class="text-sm text-gray-500 uppercase font-semibold">Alertas</p>
                     <h2 class="text-3xl font-bold text-gray-800">{{ $totalAlerts }}</h2>
                 </div>
-                <div class="p-3 bg-red-100 text-red-600 rounded-lg">
-                    <i class="fas fa-bell text-2xl"></i>
+                <div class="icon-chip icon-safe bg-red-50 border-red-100">
+                    <x-icon name="bell" class="w-6 h-6" />
                 </div>
             </div>
         </div>
@@ -71,7 +71,9 @@
             <ul class="space-y-3 text-sm text-gray-600">
                 @foreach($recentCompanies as $company)
                     <li class="flex items-center space-x-2">
-                        <span class="text-green-500">●</span>
+                        <span class="icon-tight icon-safe bg-green-50 border-green-100">
+                            <x-icon name="briefcase" class="w-4 h-4" />
+                        </span>
                         <span>Nueva empresa registrada: <strong>{{ $company->name }}</strong></span>
                         <span class="text-gray-400 text-xs">{{ $company->created_at->diffForHumans() }}</span>
                     </li>
@@ -79,7 +81,9 @@
 
                 @foreach($recentUsers as $user)
                     <li class="flex items-center space-x-2">
-                        <span class="text-indigo-500">●</span>
+                        <span class="icon-tight icon-safe bg-indigo-50 border-indigo-100">
+                            <x-icon name="users" class="w-4 h-4" />
+                        </span>
                         <span>Nuevo usuario: <strong>{{ $user->name }}</strong></span>
                         <span class="text-gray-400 text-xs">{{ $user->created_at->diffForHumans() }}</span>
                     </li>

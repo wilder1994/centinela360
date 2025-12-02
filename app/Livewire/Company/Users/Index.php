@@ -24,7 +24,9 @@ class Index extends Component
     public function toggleActive(int $id): void
     {
         $companyId = Auth::user()?->company_id;
-        $user = User::where('company_id', $companyId)->findOrFail($id);
+        $user = User::where('company_id', $companyId)
+            ->whereDoesntHave('roles', fn ($q) => $q->where('roles.id', 1))
+            ->findOrFail($id);
 
         $user->is_active = ! $user->is_active;
         $user->save();
@@ -38,6 +40,7 @@ class Index extends Component
 
         $users = User::with('roles')
             ->where('company_id', $companyId)
+            ->whereDoesntHave('roles', fn ($q) => $q->where('roles.id', 1))
             ->when($this->search, function ($query) {
                 $term = '%' . $this->search . '%';
                 $query->where(function ($q) use ($term) {

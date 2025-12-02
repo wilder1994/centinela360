@@ -48,7 +48,7 @@
         .sidebar nav a {
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 0.85rem;
             color: #d1e8ff;
             padding: 0.9rem 1.5rem;
             transition: all 0.3s ease;
@@ -128,12 +128,28 @@
     <div id="sidebar" class="sidebar">
         <div>
             <div class="logo">Centinela360</div>
+            {{-- Iconos admin: ver resources/views/components/icons y wrapper <x-icon name="..."> --}}
             <nav>
-                <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">🏠 Dashboard</a>
-                <a href="{{ route('admin.companies.index') }}" class="{{ request()->routeIs('admin.companies.index') ? 'active' : '' }}">🏢 Empresas</a>
-                <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.index') ? 'active' : '' }}">👥 Usuarios</a>
-                <a href="#">📊 Reportes</a>
-                <a href="#">⚙️ Configuración</a>
+                <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                    <span class="icon-ghost icon-safe"><x-icon name="dashboard" /></span>
+                    Panel
+                </a>
+                <a href="{{ route('admin.companies.index') }}" class="{{ request()->routeIs('admin.companies.index') ? 'active' : '' }}">
+                    <span class="icon-ghost icon-safe"><x-icon name="briefcase" /></span>
+                    Empresas
+                </a>
+                <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.index') ? 'active' : '' }}">
+                    <span class="icon-ghost icon-safe"><x-icon name="users" /></span>
+                    Usuarios
+                </a>
+                <a href="#">
+                    <span class="icon-ghost icon-safe"><x-icon name="file" /></span>
+                    Reportes
+                </a>
+                <a href="#">
+                    <span class="icon-ghost icon-safe"><x-icon name="settings" /></span>
+                    Configuración
+                </a>
             </nav>
         </div>
         <div class="p-4 text-center text-sm text-gray-300">
@@ -144,7 +160,7 @@
     <!-- Main Content -->
     <div id="main" class="main">
         <div class="topbar">
-            <button id="toggleSidebar">☰</button>
+            <button id="toggleSidebar" aria-label="Toggle sidebar">☰</button>
             <div class="user-info">
                 <span>{{ Auth::user()->name ?? 'Usuario' }}</span>
                 <form method="POST" action="{{ route('logout') }}" class="inline">

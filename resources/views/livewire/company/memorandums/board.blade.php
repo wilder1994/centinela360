@@ -26,6 +26,8 @@
                         placeholder="Buscar por asunto, descripción, prioridad, estado o creador..."
                         autocomplete="off"
                         spellcheck="true"
+                        autocapitalize="sentences"
+                        autocorrect="on"
                         class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl
                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
@@ -33,12 +35,12 @@
             </div>
         </div>
 
-        {{-- 📊 Tarjetas resumen por estado --}}
+        {{-- 📊 Tarjetas resumen por estado --}}        {{-- Tarjetas resumen por estado (iconos centralizados en /components/icons) --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             @foreach ([
-                'pendiente'   => ['label' => 'Memorandos pendientes',  'color' => 'blue',   'icon' => '⏳', 'route' => 'company.memorandums.pendientes'],
-                'en_proceso'  => ['label' => 'Memorandos en proceso',  'color' => 'amber',  'icon' => '🔄', 'route' => 'company.memorandums.en_proceso'],
-                'finalizado'  => ['label' => 'Memorandos finalizados', 'color' => 'green',  'icon' => '✅', 'route' => 'company.memorandums.finalizados'],
+                'pendiente'   => ['label' => 'Memorandos pendientes',  'color' => 'blue',   'icon' => 'clock',    'route' => 'company.memorandums.pendientes'],
+                'en_proceso'  => ['label' => 'Memorandos en proceso',  'color' => 'amber',  'icon' => 'progress', 'route' => 'company.memorandums.en_proceso'],
+                'finalizado'  => ['label' => 'Memorandos finalizados', 'color' => 'green',  'icon' => 'check',    'route' => 'company.memorandums.finalizados'],
             ] as $key => $info)
                 @php
                     $count    = $conteos[$key] ?? 0;
@@ -52,10 +54,10 @@
                     };
 
                     $iconBg = match($info['color']) {
-                        'blue'  => 'bg-blue-50 text-blue-500',
-                        'amber' => 'bg-amber-50 text-amber-500',
-                        'green' => 'bg-green-50 text-green-500',
-                        default => 'bg-slate-50 text-slate-500',
+                        'blue'  => 'bg-blue-50 border-blue-100',
+                        'amber' => 'bg-amber-50 border-amber-100',
+                        'green' => 'bg-green-50 border-green-100',
+                        default => 'bg-slate-50 border-slate-100',
                     };
 
                     $borderClass = $isActive ? 'border-blue-400 shadow-md' : $baseBorder;
@@ -71,8 +73,8 @@
                             {{ $count }}
                         </p>
                     </div>
-                    <div class="inline-flex h-9 w-9 items-center justify-center rounded-full {{ $iconBg }}">
-                        <span class="text-lg">{{ $info['icon'] }}</span>
+                    <div class="icon-tight icon-safe {{ $iconBg }}">
+                        <x-icon :name="$info['icon']" class="w-4 h-4" />
                     </div>
                 </a>
             @endforeach
@@ -140,6 +142,21 @@
                                 'baja'    => 'bg-green-100 text-green-700',
                                 default   => 'bg-slate-100 text-slate-600',
                             };
+
+                            $estadoLabel = match($t->estado) {
+                                'pending'    => 'Pendiente',
+                                'en_proceso' => 'En proceso',
+                                'finalizado' => 'Finalizado',
+                                default      => Str::title(Str::lower(str_replace('_',' ',$t->estado))),
+                            };
+
+                            $prioridadLabel = match(strtolower($t->prioridad)) {
+                                'urgente' => 'Urgente',
+                                'alta'    => 'Alta',
+                                'media'   => 'Media',
+                                'baja'    => 'Baja',
+                                default   => Str::title(Str::lower($t->prioridad ?? '')),
+                            };
                         @endphp
 
                         <tr class="{{ $rowColor }} hover:bg-slate-100 transition-colors">
@@ -150,22 +167,22 @@
                                 {{ Str::title(Str::lower($t->creador?->name ?? '---')) }}
                             </td>
                             <td class="p-2 border align-top">
-                                {{ Str::title(Str::lower($t->titulo)) }}
+                                {{ Str::title(Str::lower($t->title ?? $t->titulo ?? '')) }}
                             </td>
                             <td class="p-2 border align-top">
                                 {{ Str::title(Str::lower($t->puesto)) }}
                             </td>
                             <td class="p-2 border align-top w-[40%]">
                                 <div class="text-[11px] sm:text-xs leading-snug">
-                                    {{ $t->descripcion }}
+                                    {{ $t->body ?? $t->descripcion ?? '' }}
                                 </div>
                             </td>
                             <td class="p-2 border align-top whitespace-nowrap">
-                                {{ Str::title(Str::lower($t->asignado?->name ?? 'Sin asignar')) }}
+                                {{ Str::title(Str::lower($t->employee_name ?? $t->asignado?->name ?? 'Sin asignar')) }}
                             </td>
                             <td class="p-2 border align-top">
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold {{ $badgePrioridadClasses }}">
-                                    {{ Str::title(Str::lower($t->prioridad)) }}
+                                    {{ $prioridadLabel }}
                                 </span>
                             </td>
                             <td class="p-2 border text-center align-top">
@@ -176,19 +193,25 @@
                                 </button>
                             </td>
                             <td class="p-2 border text-center align-top">
-                                <div class="flex flex-col items-center gap-2">
-                                    @if ($accion)
-                                        <button
-                                            wire:click="confirmarCambioEstado({{ $t->id }}, '{{ $accion['estado'] }}', @json($accion['cambio']))"
-                                            class="px-3 py-1 rounded-lg text-white text-[11px] sm:text-xs {{ $accion['color'] }} transition whitespace-nowrap">
-                                            {{ $accion['texto'] }}
-                                        </button>
-                                    @else
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold {{ $badgeEstadoClasses }}">
-                                            {{ Str::title(Str::lower(str_replace('_',' ',$t->estado))) }}
-                                        </span>
-                                    @endif
-                                </div>
+                                @php
+                                    $estadoObjetivo = $accion['estado'] ?? $t->estado;
+                                    $requiereCambio = $accion['cambio'] ?? false;
+                                    $colorBoton = $accion['color'] ?? 'bg-slate-700 hover:bg-slate-800 text-white';
+                                    $textoBoton = $accion['texto'] ?? $estadoLabel;
+                                    $esFinalizado = $t->estado === 'finalizado';
+                                @endphp
+                                @if($esFinalizado)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold {{ $badgeEstadoClasses }}" title="Memorando finalizado">
+                                        {{ $estadoLabel }}
+                                    </span>
+                                @else
+                                    <button
+                                        wire:click="confirmarCambioEstado({{ $t->id }}, '{{ $estadoObjetivo }}', @json($requiereCambio))"
+                                        class="inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-semibold {{ $accion ? $colorBoton : $badgeEstadoClasses }} transition whitespace-nowrap"
+                                        title="Agregar comentario o cambiar estado">
+                                        {{ $textoBoton }}
+                                    </button>
+                                @endif
                             </td>
                         </tr>
                     @empty
@@ -292,32 +315,56 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
                     <p><strong>Fecha de creación:</strong> {{ $ticketDetalle->created_at->format('d/m/Y H:i') }}</p>
                     <p><strong>Creado por:</strong> {{ $ticketDetalle->creador?->name ?? '—' }}</p>
-                    <p><strong>Asunto:</strong> {{ $ticketDetalle->titulo }}</p>
+                    <p><strong>Asunto:</strong> {{ $ticketDetalle->title ?? $ticketDetalle->titulo ?? '' }}</p>
                     <p><strong>Puesto:</strong> {{ $ticketDetalle->puesto }}</p>
-                    <p><strong>Nombre del empleado:</strong> {{ $ticketDetalle->nombre_guarda }}</p>
-                    <p><strong>Cédula del empleado:</strong> {{ $ticketDetalle->cedula_guarda }}</p>
-                    <p><strong>Cargo:</strong> {{ $ticketDetalle->cargo }}</p>
-                    <p><strong>Estado:</strong> {{ ucfirst($ticketDetalle->estado) }}</p>
-                    <p><strong>Prioridad:</strong> {{ ucfirst($ticketDetalle->prioridad) }}</p>
+                    <p><strong>Asignado a:</strong> {{ $ticketDetalle->assignedTo?->name ?? 'Sin asignar' }}</p>
+                    <p><strong>Nombre del empleado:</strong> {{ $ticketDetalle->employee_name ?? $ticketDetalle->assignedTo?->name ?? 'No especificado' }}</p>
+                    <p><strong>Cédula:</strong> {{ $ticketDetalle->employee_document ?? 'No especificada' }}</p>
+                    <p><strong>Cargo:</strong> {{ $ticketDetalle->employee_position ?? 'No especificado' }}</p>
+                    @php
+                        $estadoDetalle = match($ticketDetalle->estado) {
+                            'pending'    => 'Pendiente',
+                            'en_proceso' => 'En proceso',
+                            'finalizado' => 'Finalizado',
+                            default      => Str::title(Str::lower($ticketDetalle->estado ?? '')),
+                        };
+                        $prioridadDetalle = match(strtolower($ticketDetalle->prioridad)) {
+                            'urgente' => 'Urgente',
+                            'alta'    => 'Alta',
+                            'media'   => 'Media',
+                            'baja'    => 'Baja',
+                            default   => Str::title(Str::lower($ticketDetalle->prioridad ?? '')),
+                        };
+                    @endphp
+                    <p><strong>Estado:</strong> {{ $estadoDetalle }}</p>
+                    <p><strong>Prioridad:</strong> {{ $prioridadDetalle }}</p>
                 </div>
 
                 <div class="mt-3 text-sm text-gray-700">
                     <p><strong>Descripción:</strong></p>
-                    <p class="mt-1 whitespace-pre-line">{{ $ticketDetalle->descripcion }}</p>
+                    <p class="mt-1 whitespace-pre-line">{{ $ticketDetalle->body ?? $ticketDetalle->descripcion ?? '' }}</p>
                 </div>
 
                 <h3 class="mt-4 font-semibold text-gray-800 text-sm">Historial</h3>
                 <ul class="list-disc pl-5 text-xs text-gray-700 space-y-1 mt-1">
                     @foreach($ticketDetalle->logs as $log)
-                        <li>
-                            {{ $log->created_at->format('d/m/Y H:i') }} -
-                            {{ $log->usuario?->name ?? 'Sistema' }} cambió de
-                            <strong>{{ ucfirst($log->estado_anterior) }}</strong> a
-                            <strong>{{ ucfirst($log->estado_nuevo) }}</strong>
-                            @if($log->comentario)
-                                ({{ $log->comentario }})
-                            @endif
-                        </li>
+                        @if($log->estado_anterior !== $log->estado_nuevo)
+                            <li>
+                                {{ $log->created_at->format('d/m/Y H:i') }} -
+                                {{ $log->usuario?->name ?? 'Sistema' }} cambió de
+                                <strong>{{ ucfirst($log->estado_anterior) }}</strong> a
+                                <strong>{{ ucfirst($log->estado_nuevo) }}</strong>
+                                @if($log->comentario)
+                                    ({{ $log->comentario }})
+                                @endif
+                            </li>
+                        @elseif($log->comentario)
+                            <li>
+                                {{ $log->created_at->format('d/m/Y H:i') }} -
+                                {{ $log->usuario?->name ?? 'Sistema' }} agregó comentario:
+                                “{{ $log->comentario }}”
+                            </li>
+                        @endif
                     @endforeach
                 </ul>
 

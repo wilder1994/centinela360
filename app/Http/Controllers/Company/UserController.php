@@ -13,22 +13,40 @@ class UserController extends Controller
 {
     public function index()
     {
-        $companyId = auth()->user()->company_id;
-        $users = User::where('company_id', $companyId)->orderBy('name')->get();
+        $auth = auth()->user();
+
+        if (! $auth->isCompanyAdmin()) {
+            abort(403);
+        }
+
+        $users = User::where('company_id', $auth->company_id)
+            ->whereDoesntHave('roles', fn ($q) => $q->where('roles.id', 1)) // nunca mostrar Super Admin
+            ->orderBy('name')
+            ->get();
 
         return view('company.users.index', compact('users'));
     }
 
     public function create()
     {
+        $auth = auth()->user();
+        if (! $auth->isCompanyAdmin()) {
+            abort(403);
+        }
+
         // Provide roles so the company admin can assign them
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::where('id', '!=', 1)->orderBy('name')->get();
         return view('company.users.create', compact('roles'));
     }
 
     public function store(Request $request)
     {
-        $companyId = auth()->user()->company_id;
+        $auth = auth()->user();
+        if (! $auth->isCompanyAdmin()) {
+            abort(403);
+        }
+
+        $companyId = $auth->company_id;
 
         $validated = $request->validate([
             'name' => 'required|string|max:150',
@@ -37,7 +55,7 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'active' => 'sometimes|boolean',
             'roles' => 'nullable|array',
-            'roles.*' => 'integer|exists:roles,id',
+            'roles.*' => 'integer|exists:roles,id|not_in:1',
         ]);
 
         $user = User::create([
@@ -50,7 +68,7 @@ class UserController extends Controller
         ]);
 
         if (!empty($validated['roles'])) {
-            $user->roles()->sync($validated['roles']);
+            $user->roles()->sync(array_diff($validated['roles'], [1]));
         }
 
         return redirect()->route('company.users.index')
@@ -59,24 +77,23 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        // Ensure the user belongs to the same company
-        $companyId = auth()->user()->company_id;
-        if ($user->company_id !== $companyId) {
-            abort(403);
-        }
+        $auth = auth()->user();
+        if ($user->isSuperAdmin()) abort(403);
+        if ($user->company_id !== $auth->company_id) abort(403);
+        if (! $auth->isCompanyAdmin()) abort(403);
 
-        $roles = Role::orderBy('name')->get();
-        $userRoles = $user->roles()->pluck('id')->toArray();
+        $roles = Role::where('id', '!=', 1)->orderBy('name')->get();
+        $userRoles = $user->roles()->where('roles.id', '!=', 1)->pluck('id')->toArray();
 
         return view('company.users.edit', compact('user', 'roles', 'userRoles'));
     }
 
     public function update(Request $request, User $user)
     {
-        $companyId = auth()->user()->company_id;
-        if ($user->company_id !== $companyId) {
-            abort(403);
-        }
+        $auth = auth()->user();
+        if ($user->isSuperAdmin()) abort(403);
+        if ($user->company_id !== $auth->company_id) abort(403);
+        if (! $auth->isCompanyAdmin()) abort(403);
 
         $validated = $request->validate([
             'name' => 'required|string|max:150',
@@ -88,7 +105,7 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'active' => 'sometimes|boolean',
             'roles' => 'nullable|array',
-            'roles.*' => 'integer|exists:roles,id',
+            'roles.*' => 'integer|exists:roles,id|not_in:1',
         ]);
 
         $user->name = $validated['name'];
@@ -102,7 +119,8 @@ class UserController extends Controller
 
         $user->save();
 
-        $user->roles()->sync($validated['roles'] ?? []);
+        $roles = array_diff($validated['roles'] ?? [], [1]);
+        $user->roles()->sync($roles);
 
         return redirect()->route('company.users.index')
                          ->with('success', 'Usuario actualizado correctamente.');
@@ -110,10 +128,10 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        $companyId = auth()->user()->company_id;
-        if ($user->company_id !== $companyId) {
-            abort(403);
-        }
+        $auth = auth()->user();
+        if ($user->isSuperAdmin()) abort(403);
+        if ($user->company_id !== $auth->company_id) abort(403);
+        if (! $auth->isCompanyAdmin()) abort(403);
 
         $user->roles()->sync([]); // detach roles
         $user->delete();

@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMemorandumRequest;
 use App\Http\Requests\UpdateMemorandumRequest;
 use App\Models\Client;
+use App\Models\Employee;
 use App\Models\Memorandum;
 use App\Models\MemorandumLog;
+use App\Models\User;
 use App\Services\ResponsibleUserService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -78,11 +80,27 @@ class MemorandumController extends Controller
 
     public function create(Request $request, ResponsibleUserService $responsables): View
     {
+        $companyId = $request->user()->company_id;
+
+        $users = User::where('company_id', $companyId)
+            ->whereDoesntHave('roles', function ($q) {
+                $q->where('roles.id', 1); // excluir Super Admin
+            })
+            ->orderBy('name')
+            ->get();
+
+        $employees = Employee::where('company_id', $companyId)
+            ->select('id', 'client_id', 'first_name', 'last_name', 'position', 'document_number')
+            ->orderBy('first_name')
+            ->get();
+
         return view('company.memorandums.create', [
             'estadoOptions' => Memorandum::ESTADOS,
             'prioridadOptions' => ['urgente', 'alta', 'media', 'baja'],
             'responsables' => $responsables->getResponsables(),
             'clientes' => Client::orderBy('business_name')->get(),
+            'users' => $users,
+            'employees' => $employees,
         ]);
     }
 
@@ -95,6 +113,9 @@ class MemorandumController extends Controller
             'company_id' => $companyId,
             'author_id' => $request->user()->id,
             'puesto' => $data['puesto'],
+            'employee_name' => $data['name'] ?? null,
+            'employee_document' => $data['cedula'] ?? null,
+            'employee_position' => $data['cargo'] ?? null,
             'assigned_to' => $data['assigned_to'] ?? null,
             'approved_by' => $data['approved_by'] ?? null,
             'title' => $data['title'],

@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Icon system helpers:
+   - Las figuras SVG definen su propio color (no usan currentColor).
+   - Estos contenedores evitan que las variables --primary/--secondary o clases text-* alteren los íconos. */
+.icon-chip {
+    @apply inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+}
+
+.icon-ghost {
+    @apply inline-flex items-center justify-center rounded-lg border border-slate-100 bg-white/80;
+    width: 38px;
+    height: 38px;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.02);
+    flex-shrink: 0;
+}
+
+.icon-tight {
+    @apply inline-flex items-center justify-center rounded-md bg-white border border-slate-200;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.icon-safe svg {
+    display: block;
+    filter: none;
+}
