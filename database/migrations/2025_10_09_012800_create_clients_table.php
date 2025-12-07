@@ -20,11 +20,15 @@ return new class extends Migration
             $table->string('email');
             $table->string('representative_name')->nullable();
             $table->string('quadrant')->nullable();
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
+            $table->timestamp('archived_at')->nullable();
             $table->timestamps();
 
             $table->unique(['company_id', 'nit']);
             $table->index(['company_id', 'business_name']);
             $table->index(['company_id', 'city']);
+            $table->index(['company_id', 'archived_at']);
         });
     }
 

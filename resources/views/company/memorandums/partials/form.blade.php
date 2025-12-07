@@ -105,16 +105,20 @@
 
     <div class="space-y-1">
         <label class="block text-sm font-semibold text-gray-700">Asunto</label>
-        <input
-            type="text"
+        <select
             name="title"
-            value="{{ old('title', $memo->title ?? '') }}"
-            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[var(--primary)] focus:ring-[var(--primary)]"
-            spellcheck="true"
-            autocapitalize="sentences"
-            autocorrect="on"
+            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-[var(--primary)]"
             required
         >
+            <option value="">Selecciona el asunto</option>
+            @forelse (($subjects ?? collect()) as $subject)
+                <option value="{{ $subject->name }}" @selected(old('title', $memo->title ?? '') === $subject->name)>
+                    {{ $subject->name }}
+                </option>
+            @empty
+                <option value="" disabled selected>Para seleccionar, crea el asunto.</option>
+            @endforelse
+        </select>
         @error('title')
             <div class="text-red-600 text-sm mt-1">{{ $message }}</div>
         @enderror

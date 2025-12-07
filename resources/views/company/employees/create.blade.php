@@ -1,7 +1,7 @@
 @extends('layouts.company')
 
 @section('content')
-<div class="animate-fadeIn space-y-6 max-w-7xl mx-auto px-6">
+<div class="animate-fadeIn space-y-8 max-w-6xl mx-auto px-6 relative">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-semibold text-gray-800">Nuevo empleado</h1>

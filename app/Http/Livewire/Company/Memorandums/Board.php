@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Company\Memorandums;
 use App\Models\Memorandum;
 use App\Models\User;
 use Livewire\Component;
+use Illuminate\Support\Facades\Auth;
 
 class Board extends Component
 {
@@ -26,13 +27,18 @@ class Board extends Component
     public string $comentario = '';
     public ?int $responsable = null;
     public $usuarios = [];
+    public string $finalDecision = '';
 
     public function mount(array $estadosVisibles = [], string $tituloTabla = 'Memorandos', string $mensajeVacio = 'No hay memorandos registrados.')
     {
         $this->estadosVisibles = $estadosVisibles;
         $this->tituloTabla = $tituloTabla;
         $this->mensajeVacio = $mensajeVacio;
-        $this->usuarios = User::where('active', true)->orderBy('name')->get();
+        $companyId = Auth::user()->company_id;
+        $this->usuarios = User::where('active', true)
+            ->where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
 
         $this->cargarDatos();
     }
@@ -49,8 +55,11 @@ class Board extends Component
 
     protected function cargarDatos(): void
     {
+        $companyId = Auth::user()->company_id;
+
         $query = Memorandum::query()
             ->with(['author', 'assignedTo'])
+            ->where('company_id', $companyId)
             ->orderByDesc('created_at');
 
         if (! empty($this->estadosVisibles)) {
@@ -82,6 +91,7 @@ class Board extends Component
                 'asignado' => $memo->assignedTo,
                 'prioridad' => $memo->prioridad,
                 'estado' => $memo->estado,
+                'final_status' => $memo->final_status ?? null,
                 'nombre_guarda' => $memo->assignedTo?->name,
                 'cedula_guarda' => '',
                 'cargo' => '',
@@ -91,9 +101,9 @@ class Board extends Component
         })->all();
 
         $this->conteos = [
-            'pendiente'   => Memorandum::where('estado', 'pending')->count(),
-            'en_proceso'  => Memorandum::where('estado', 'en_proceso')->count(),
-            'finalizado'  => Memorandum::where('estado', 'finalizado')->count(),
+            'pendiente'   => Memorandum::where('company_id', $companyId)->where('estado', 'pending')->count(),
+            'en_proceso'  => Memorandum::where('company_id', $companyId)->where('estado', 'en_proceso')->count(),
+            'finalizado'  => Memorandum::where('company_id', $companyId)->where('estado', 'finalizado')->count(),
         ];
     }
 
@@ -107,7 +117,10 @@ class Board extends Component
 
     public function verDetalles($id): void
     {
-        $this->ticketDetalle = Memorandum::with(['author', 'assignedTo', 'logs.user'])->findOrFail($id);
+        $companyId = Auth::user()->company_id;
+        $this->ticketDetalle = Memorandum::with(['author', 'assignedTo', 'logs.user'])
+            ->where('company_id', $companyId)
+            ->findOrFail($id);
         if ($this->ticketDetalle) {
             $this->ticketDetalle->titulo = $this->ticketDetalle->title;
             $this->ticketDetalle->descripcion = $this->ticketDetalle->body;
@@ -130,6 +143,7 @@ class Board extends Component
         $this->cambioEstado = (bool) $cambio;
         $this->comentario = '';
         $this->responsable = null;
+        $this->finalDecision = '';
         $this->mostrarModal = true;
     }
 
@@ -143,7 +157,10 @@ class Board extends Component
             'responsable.required' => 'Debe asignar un responsable.',
         ]);
 
-        $memo = Memorandum::with('logs')->find($this->ticketActualId);
+        $companyId = Auth::user()->company_id;
+        $memo = Memorandum::with('logs')
+            ->where('company_id', $companyId)
+            ->find($this->ticketActualId);
         if (! $memo) {
             $this->resetModal();
             return;
@@ -157,6 +174,9 @@ class Board extends Component
 
         $memo->assigned_to = $this->responsable;
         $memo->estado = $estadoDestino;
+        if ($estadoDestino !== 'finalizado') {
+            $memo->final_status = null;
+        }
         $memo->save();
 
         $memo->logs()->create([
@@ -174,13 +194,16 @@ class Board extends Component
     {
         $this->validate([
             'comentario' => ['required', 'string', 'min:3'],
-            'responsable' => ['required', 'integer', 'exists:users,id'],
+            'finalDecision' => ['required', 'in:aprobado,negado'],
         ], [
             'comentario.required' => 'El comentario es obligatorio.',
-            'responsable.required' => 'Debe asignar un responsable.',
+            'finalDecision.required' => 'Debe indicar si fue aprobado o negado.',
         ]);
 
-        $memo = Memorandum::with('logs')->find($this->ticketActualId);
+        $companyId = Auth::user()->company_id;
+        $memo = Memorandum::with('logs')
+            ->where('company_id', $companyId)
+            ->find($this->ticketActualId);
         if (! $memo) {
             $this->resetModal();
             return;
@@ -189,15 +212,16 @@ class Board extends Component
         $estadoAnterior = $memo->estado;
         $estadoDestino = 'finalizado';
 
-        $memo->assigned_to = $this->responsable;
+        $memo->assigned_to = $this->responsable ?: Auth::id();
         $memo->estado = $estadoDestino;
+        $memo->final_status = $this->finalDecision;
         $memo->save();
 
         $memo->logs()->create([
             'user_id' => auth()->id(),
             'estado_anterior' => $estadoAnterior,
             'estado_nuevo' => $estadoDestino,
-            'comentario' => $this->comentario,
+            'comentario' => trim($this->comentario . ' (' . ucfirst($this->finalDecision) . ')'),
         ]);
 
         $this->resetModal();
@@ -212,6 +236,7 @@ class Board extends Component
         $this->ticketActualId = null;
         $this->nuevoEstado = '';
         $this->cambioEstado = false;
+        $this->finalDecision = '';
     }
 
     public function render()

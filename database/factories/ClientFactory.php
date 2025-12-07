@@ -23,6 +23,8 @@ class ClientFactory extends Factory
             'email' => $this->faker->companyEmail(),
             'representative_name' => $this->faker->name(),
             'quadrant' => $this->faker->optional()->randomElement(['Norte', 'Sur', 'Oriente', 'Occidente']),
+            'start_date' => $this->faker->dateTimeBetween('-3 years', '-1 month'),
+            'end_date' => $this->faker->optional()->dateTimeBetween('-1 month', '+6 months'),
         ];
     }
 

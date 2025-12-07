@@ -9,6 +9,7 @@ use App\Models\Client;
 use App\Models\Employee;
 use App\Models\Memorandum;
 use App\Models\MemorandumLog;
+use App\Models\MemorandumSubject;
 use App\Models\User;
 use App\Services\ResponsibleUserService;
 use Illuminate\Contracts\View\View;
@@ -59,10 +60,26 @@ class MemorandumController extends Controller
             'finalizado' => Memorandum::where('company_id', $companyId)->where('estado', 'finalizado')->count(),
         ];
 
-        $latestTickets = Memorandum::with(['creador', 'company'])
+        $latestTickets = Memorandum::with(['creador', 'company', 'author'])
             ->where('company_id', $companyId)
             ->orderByDesc('created_at')
             ->limit(5)
+            ->get();
+
+        $approvedBySubject = Memorandum::selectRaw('title, COUNT(*) as total')
+            ->where('company_id', $companyId)
+            ->where('estado', 'finalizado')
+            ->where('final_status', 'aprobado')
+            ->groupBy('title')
+            ->orderByDesc('total')
+            ->get();
+
+        $deniedBySubject = Memorandum::selectRaw('title, COUNT(*) as total')
+            ->where('company_id', $companyId)
+            ->where('estado', 'finalizado')
+            ->where('final_status', 'negado')
+            ->groupBy('title')
+            ->orderByDesc('total')
             ->get();
 
         return view('company.memorandums.index', [
@@ -75,6 +92,9 @@ class MemorandumController extends Controller
             'total' => array_sum($stats),
             'latestTickets' => $latestTickets,
             'indicators' => $indicators,
+            'subjects' => MemorandumSubject::where('company_id', $companyId)->orderBy('name')->get(),
+            'approvedBySubject' => $approvedBySubject,
+            'deniedBySubject' => $deniedBySubject,
         ]);
     }
 
@@ -98,9 +118,10 @@ class MemorandumController extends Controller
             'estadoOptions' => Memorandum::ESTADOS,
             'prioridadOptions' => ['urgente', 'alta', 'media', 'baja'],
             'responsables' => $responsables->getResponsables(),
-            'clientes' => Client::orderBy('business_name')->get(),
+            'clientes' => Client::where('company_id', $companyId)->orderBy('business_name')->get(),
             'users' => $users,
             'employees' => $employees,
+            'subjects' => MemorandumSubject::where('company_id', $companyId)->orderBy('name')->get(),
         ]);
     }
 
@@ -159,7 +180,8 @@ class MemorandumController extends Controller
             'estadoOptions' => Memorandum::ESTADOS,
             'prioridadOptions' => ['urgente', 'alta', 'media', 'baja'],
             'responsables' => $responsables->getResponsables(),
-            'clientes' => Client::orderBy('business_name')->get(),
+            'clientes' => Client::where('company_id', $request->user()->company_id)->orderBy('business_name')->get(),
+            'subjects' => MemorandumSubject::where('company_id', $request->user()->company_id)->orderBy('name')->get(),
         ]);
     }
 

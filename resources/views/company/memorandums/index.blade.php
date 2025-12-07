@@ -25,6 +25,13 @@
                 </span>
                 <span class="ml-2">Nuevo memorando</span>
             </a>
+            <button type="button" data-subjects-modal
+                class="inline-flex items-center px-4 py-2 rounded-lg border border-[var(--primary)] text-[var(--primary)] text-sm font-medium hover:bg-[var(--primary)]/10 transition">
+                <span class="icon-tight icon-safe bg-[var(--primary)]/10 border-[var(--primary)]/20">
+                    <x-icon name="tag" class="w-4 h-4" />
+                </span>
+                <span class="ml-2">Asuntos</span>
+            </button>
         </div>
     </div>
 
@@ -191,7 +198,7 @@
                                 </p>
                                 <p class="text-xs text-slate-500 mt-1">
                                     {{ $memo->created_at->format('d/m/Y H:i') }}
-                                    · Creado por: {{ $memo->puesto }}
+                                    · Usuario: {{ $memo->author?->name ?? 'N/D' }}
                                 </p>
                             </div>
                             <div class="flex items-center gap-2">
@@ -219,5 +226,133 @@
             @endif
         </div>
     </div>
+
+    {{-- Modal de asuntos --}}
+    <div id="subjects-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center z-30">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-xl p-6 relative">
+            <button type="button" data-subjects-close class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">&times;</button>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Asuntos</h3>
+            <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                @forelse ($subjects as $subject)
+                    <div class="flex items-center gap-2">
+                        <form method="POST" action="{{ route('company.memorandum_subjects.update', $subject) }}" class="flex-1 flex items-center gap-2">
+                            @csrf
+                            @method('PUT')
+                            <input type="text" name="name" value="{{ $subject->name }}" class="input w-full rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]">
+                            <button type="submit" class="px-3 py-2 bg-[var(--primary)] text-white rounded-lg text-sm">Guardar</button>
+                        </form>
+                        <form method="POST" action="{{ route('company.memorandum_subjects.destroy', $subject) }}" onsubmit="return confirm('¿Eliminar asunto?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-red-600 text-sm">Eliminar</button>
+                        </form>
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-500">No hay asuntos configurados aún.</p>
+                @endforelse
+            </div>
+            <form method="POST" action="{{ route('company.memorandum_subjects.store') }}" class="mt-4 space-y-2">
+                @csrf
+                <label class="block text-sm font-medium text-gray-700">Nuevo asunto</label>
+                <div class="flex items-center gap-2">
+                    <input type="text" name="name" class="input w-full rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
+                    <button type="submit" class="px-4 py-2 bg-[var(--primary)] text-white rounded-lg">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Estadísticas por asunto (aprobados / negados) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="rounded-2xl border bg-white p-4 sm:p-5 shadow-sm">
+            <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <span class="icon-tight icon-safe bg-green-50 border-green-100">
+                    <x-icon name="check" class="w-4 h-4" />
+                </span>
+                Memorandos aprobados por asunto
+            </h2>
+            @if(($approvedBySubject ?? collect())->count())
+                <div class="border rounded-xl overflow-hidden">
+                    <table class="min-w-full text-xs">
+                        <thead class="bg-slate-50 text-slate-500 uppercase tracking-wide">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Asunto</th>
+                                <th class="px-3 py-2 text-center">Aprobados</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            @foreach ($approvedBySubject as $row)
+                                <tr>
+                                    <td class="px-3 py-2 text-gray-700">{{ $row->title ?? 'Sin asunto' }}</td>
+                                    <td class="px-3 py-2 text-center font-semibold text-green-700">{{ $row->total }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="text-xs text-gray-500">No hay memorandos aprobados aún.</p>
+            @endif
+        </div>
+
+        <div class="rounded-2xl border bg-white p-4 sm:p-5 shadow-sm">
+            <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <span class="icon-tight icon-safe bg-red-50 border-red-100">
+                    <x-icon name="close" class="w-4 h-4" />
+                </span>
+                Memorandos negados por asunto
+            </h2>
+            @if(($deniedBySubject ?? collect())->count())
+                <div class="border rounded-xl overflow-hidden">
+                    <table class="min-w-full text-xs">
+                        <thead class="bg-slate-50 text-slate-500 uppercase tracking-wide">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Asunto</th>
+                                <th class="px-3 py-2 text-center">Negados</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            @foreach ($deniedBySubject as $row)
+                                <tr>
+                                    <td class="px-3 py-2 text-gray-700">{{ $row->title ?? 'Sin asunto' }}</td>
+                                    <td class="px-3 py-2 text-center font-semibold text-red-700">{{ $row->total }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="text-xs text-gray-500">No hay memorandos negados aún.</p>
+            @endif
+        </div>
+    </div>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const subjectsModal = document.getElementById('subjects-modal');
+        const shouldOpenSubjects = @json(session('open_memo_subjects', false));
+
+        document.querySelectorAll('[data-subjects-modal]').forEach(button => {
+            button.addEventListener('click', () => {
+                subjectsModal?.classList.remove('hidden');
+                subjectsModal?.classList.add('flex');
+            });
+        });
+
+        document.querySelectorAll('[data-subjects-close]').forEach(button => {
+            button.addEventListener('click', () => {
+                subjectsModal?.classList.add('hidden');
+                subjectsModal?.classList.remove('flex');
+            });
+        });
+
+        if (subjectsModal && shouldOpenSubjects) {
+            subjectsModal.classList.remove('hidden');
+            subjectsModal.classList.add('flex');
+        }
+    });
+</script>
+@endpush
 @endsection

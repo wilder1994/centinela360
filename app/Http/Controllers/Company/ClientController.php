@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
+use App\Models\ClientNote;
 use App\Models\ClientService;
+use App\Models\ServiceType;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ClientController extends Controller
@@ -25,8 +28,9 @@ class ClientController extends Controller
         $companyId = $request->user()->company_id;
 
         $clients = Client::query()
-            ->with('services')
+            ->with(['services', 'notes.user'])
             ->forCompany($companyId)
+            ->withoutArchived()
             ->search($search)
             ->latest()
             ->paginate(10)
@@ -35,12 +39,33 @@ class ClientController extends Controller
         return view('company.clients.index', [
             'clients' => $clients,
             'search' => $search,
+            'serviceTypes' => ServiceType::query()->where('company_id', $companyId)->orderBy('name')->get(),
         ]);
     }
 
-    public function create(): View
+    public function archived(Request $request): View
     {
-        return view('company.clients.create', $this->formOptions());
+        $search = $request->string('search')->toString();
+        $companyId = $request->user()->company_id;
+
+        $clients = Client::query()
+            ->with(['services', 'notes.user'])
+            ->forCompany($companyId)
+            ->onlyArchived()
+            ->search($search)
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('company.clients.archived', [
+            'clients' => $clients,
+            'search' => $search,
+        ]);
+    }
+
+    public function create(Request $request): View
+    {
+        return view('company.clients.create', $this->formOptions($request->user()->company_id));
     }
 
     public function store(StoreClientRequest $request): RedirectResponse
@@ -60,9 +85,15 @@ class ClientController extends Controller
                 'email' => $data['email'],
                 'representative_name' => $data['representative_name'],
                 'quadrant' => $data['quadrant'],
+                'start_date' => $data['start_date'],
+                'end_date' => $data['end_date'] ?? null,
             ]);
 
             $this->syncServices($client, $data['service_types'], $data['service_schedules']);
+            $client->notes()->create([
+                'user_id' => auth()->id(),
+                'body' => 'Cliente creado.',
+            ]);
         });
 
         return redirect()
@@ -78,7 +109,7 @@ class ClientController extends Controller
 
         return view('company.clients.edit', array_merge([
             'client' => $client,
-        ], $this->formOptions()));
+        ], $this->formOptions($request->user()->company_id)));
     }
 
     public function update(UpdateClientRequest $request, Client $client): RedirectResponse
@@ -97,9 +128,15 @@ class ClientController extends Controller
                 'email' => $data['email'],
                 'representative_name' => $data['representative_name'],
                 'quadrant' => $data['quadrant'],
+                'start_date' => $data['start_date'],
+                'end_date' => $data['end_date'] ?? null,
             ]);
 
             $this->syncServices($client, $data['service_types'], $data['service_schedules']);
+            $client->notes()->create([
+                'user_id' => auth()->id(),
+                'body' => 'Cliente actualizado.',
+            ]);
         });
 
         return redirect()
@@ -110,11 +147,53 @@ class ClientController extends Controller
     public function destroy(Request $request, Client $client): RedirectResponse
     {
         $this->authorizeClient($request, $client);
-        $client->delete();
+
+        $data = $request->validate([
+            'comment' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $client->update(['archived_at' => Carbon::now()]);
+        $client->notes()->create([
+            'user_id' => $request->user()->id,
+            'body' => 'Archivado: ' . $data['comment'],
+        ]);
 
         return redirect()
             ->route('company.clients.index')
-            ->with('status', 'Cliente eliminado correctamente.');
+            ->with('status', 'Cliente archivado correctamente.');
+    }
+
+    public function unarchive(Request $request, Client $client): RedirectResponse
+    {
+        $this->authorizeClient($request, $client);
+
+        $data = $request->validate([
+            'comment' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $client->update(['archived_at' => null]);
+        $client->notes()->create([
+            'user_id' => $request->user()->id,
+            'body' => 'Desarchivado: ' . $data['comment'],
+        ]);
+
+        return back()->with('status', 'Cliente desarchivado correctamente.');
+    }
+
+    public function storeNote(Request $request, Client $client): RedirectResponse
+    {
+        $this->authorizeClient($request, $client);
+
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $client->notes()->create([
+            'user_id' => $request->user()->id,
+            'body' => $data['body'],
+        ]);
+
+        return back()->with('status', 'Nota registrada.');
     }
 
     private function authorizeClient(Request $request, Client $client): void
@@ -136,10 +215,16 @@ class ClientController extends Controller
         $client->services()->saveMany($services);
     }
 
-    private function formOptions(): array
+    private function formOptions(int $companyId): array
     {
+        $serviceTypesOptions = ServiceType::query()
+            ->where('company_id', $companyId)
+            ->orderBy('name')
+            ->pluck('name')
+            ->toArray();
+
         return [
-            'serviceTypesOptions' => ['Ronda', 'Portería', 'Ocasional'],
+            'serviceTypesOptions' => $serviceTypesOptions,
             'serviceScheduleOptions' => ['12H', '8H', 'Ocasional'],
         ];
     }

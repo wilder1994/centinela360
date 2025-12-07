@@ -50,9 +50,11 @@
             <label class="block text-sm font-medium text-gray-700">Tipo empleado</label>
             <select name="position" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
                 <option value="">Selecciona</option>
-                @foreach($positions as $position)
+                @forelse($positions as $position)
                     <option value="{{ $position }}" @selected(old('position', $employee->position ?? '') === $position)>{{ $position }}</option>
-                @endforeach
+                @empty
+                    <option value="" disabled selected>Para seleccionar, crea tipos de empleado en Catálogos.</option>
+                @endforelse
             </select>
             @error('position') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
@@ -61,9 +63,11 @@
             <label class="block text-sm font-medium text-gray-700">Tipo documento</label>
             <select name="document_type" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
                 <option value="">Selecciona</option>
-                @foreach($documentTypes as $type)
+                @forelse($documentTypes as $type)
                     <option value="{{ $type }}" @selected(old('document_type', $employee->document_type ?? '') === $type)>{{ $type }}</option>
-                @endforeach
+                @empty
+                    <option value="" disabled selected>Para seleccionar, crea tipos de documento en Catálogos.</option>
+                @endforelse
             </select>
             @error('document_type') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
@@ -149,9 +153,11 @@
             <label class="block text-sm font-medium text-gray-700">Tipo de servicio asignado</label>
             <select name="service_type" id="service_type" class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" data-service-select required>
                 <option value="">Selecciona el servicio</option>
-                @foreach($serviceTypesOptions as $type)
+                @forelse($serviceTypesOptions as $type)
                     <option value="{{ $type }}" @selected(old('service_type', $employee->service_type ?? '') === $type)>{{ $type }}</option>
-                @endforeach
+                @empty
+                    <option value="" disabled selected>Para seleccionar, crea tipos de servicio en el modal de clientes.</option>
+                @endforelse
             </select>
             @error('service_type') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>

@@ -32,6 +32,8 @@ class UpdateClientRequest extends FormRequest
             'email' => ['required', 'email', 'max:255'],
             'representative_name' => ['required', 'string', 'max:255'],
             'quadrant' => ['required', 'string', 'max:50'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'service_types' => ['required', 'array'],
             'service_types.*' => ['required', 'string', 'max:100'],
             'service_schedules' => ['required', 'array'],

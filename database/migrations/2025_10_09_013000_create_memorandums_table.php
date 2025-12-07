@@ -16,8 +16,12 @@ return new class extends Migration
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->string('title');
             $table->string('puesto')->nullable();
+            $table->string('employee_name')->nullable();
+            $table->string('employee_document')->nullable();
+            $table->string('employee_position')->nullable();
             $table->text('body')->nullable();
             $table->enum('estado', ['pending', 'en_proceso', 'finalizado'])->default('pending')->index();
+            $table->string('final_status')->nullable()->index();
             $table->enum('prioridad', ['urgente', 'alta', 'media', 'baja'])->default('media')->index();
             $table->timestamp('vence_en')->nullable();
             $table->timestamps();

@@ -70,6 +70,18 @@
         <input type="text" name="quadrant" value="{{ old('quadrant', $client->quadrant ?? '') }}"
                class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
     </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700">Fecha de inicio</label>
+        <input type="date" name="start_date" value="{{ old('start_date', optional($client->start_date ?? null)?->format('Y-m-d')) }}"
+               class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]" required>
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700">Fecha de terminación (opcional)</label>
+        <input type="date" name="end_date" value="{{ old('end_date', optional($client->end_date ?? null)?->format('Y-m-d')) }}"
+               class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]">
+    </div>
 </div>
 
 <div class="mt-10">
@@ -85,9 +97,11 @@
                     <label class="block text-sm font-medium text-gray-700">Tipo de servicio</label>
                     <select name="service_types[]" data-service-type
                             class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]">
-                        @foreach ($serviceTypesOptions as $option)
+                        @forelse ($serviceTypesOptions as $option)
                             <option value="{{ $option }}" @selected($option === $type)>{{ $option }}</option>
-                        @endforeach
+                        @empty
+                            <option value="" disabled selected>Para seleccionar, Primero crea los tipos de servicio.</option>
+                        @endforelse
                     </select>
                 </div>
 
@@ -95,9 +109,11 @@
                     <label class="block text-sm font-medium text-gray-700">Horario</label>
                     <select name="service_schedules[]" data-service-schedule
                             class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]">
-                        @foreach ($serviceScheduleOptions as $option)
-                            <option value="{{ $option }}" @selected(($serviceSchedules[$index] ?? '') === $option)>{{ $option }}</option>
-                        @endforeach
+                        @for ($h = 1; $h <= 24; $h++)
+                            <option value="{{ $h }}H" @selected(($serviceSchedules[$index] ?? '') === $h.'H')>
+                                {{ $h }} {{ $h === 1 ? 'hora' : 'horas' }}
+                            </option>
+                        @endfor
                     </select>
                 </div>
 
@@ -121,9 +137,11 @@
             <label class="block text-sm font-medium text-gray-700">Tipo de servicio</label>
             <select name="service_types[]" data-service-type
                     class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]">
-                @foreach ($serviceTypesOptions as $option)
+                @forelse ($serviceTypesOptions as $option)
                     <option value="{{ $option }}">{{ $option }}</option>
-                @endforeach
+                @empty
+                    <option value="" disabled selected>Para seleccionar, Primero crea los tipos de servicio.</option>
+                @endforelse
             </select>
         </div>
 
@@ -131,9 +149,9 @@
             <label class="block text-sm font-medium text-gray-700">Horario</label>
             <select name="service_schedules[]" data-service-schedule
                     class="mt-2 block w-full input rounded-lg border-[var(--primary)] focus:ring-[var(--primary)]">
-                @foreach ($serviceScheduleOptions as $option)
-                    <option value="{{ $option }}">{{ $option }}</option>
-                @endforeach
+                @for ($h = 1; $h <= 24; $h++)
+                    <option value="{{ $h }}H">{{ $h }} {{ $h === 1 ? 'hora' : 'horas' }}</option>
+                @endfor
             </select>
         </div>
 

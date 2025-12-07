@@ -30,6 +30,7 @@ return new class extends Migration
             $table->date('birth_date')->nullable();
             $table->date('start_date')->nullable();
             $table->date('badge_expires_at')->nullable();
+            $table->timestamp('archived_at')->nullable();
 
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('client_id')->nullable()->constrained()->nullOnDelete();
@@ -37,6 +38,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['company_id', 'last_name']);
+            $table->index(['company_id', 'archived_at']);
         });
     }
 

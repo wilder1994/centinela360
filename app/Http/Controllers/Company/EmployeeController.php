@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\Client;
+use App\Models\DocumentType;
 use App\Models\Employee;
+use App\Models\EmployeeType;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
 {
@@ -26,8 +28,9 @@ class EmployeeController extends Controller
         $companyId = $request->user()->company_id;
 
         $employees = Employee::query()
-            ->with('client')
+            ->with(['client', 'activityNotes.user'])
             ->forCompany($companyId)
+            ->withoutArchived()
             ->search($search)
             ->latest()
             ->paginate(10)
@@ -36,6 +39,30 @@ class EmployeeController extends Controller
         return view('company.employees.index', [
             'employees' => $employees,
             'search' => $search,
+            'employeeTypes' => EmployeeType::where('company_id', $companyId)->orderBy('name')->get(),
+            'documentTypesCatalog' => DocumentType::where('company_id', $companyId)->orderBy('name')->get(),
+        ]);
+    }
+
+    public function archived(Request $request): View
+    {
+        $search = $request->string('search')->toString();
+        $companyId = $request->user()->company_id;
+
+        $employees = Employee::query()
+            ->with(['client', 'activityNotes.user'])
+            ->forCompany($companyId)
+            ->onlyArchived()
+            ->search($search)
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('company.employees.archived', [
+            'employees' => $employees,
+            'search' => $search,
+            'employeeTypes' => EmployeeType::where('company_id', $companyId)->orderBy('name')->get(),
+            'documentTypesCatalog' => DocumentType::where('company_id', $companyId)->orderBy('name')->get(),
         ]);
     }
 
@@ -75,6 +102,14 @@ class EmployeeController extends Controller
             'notes'           => $data['notes'] ?? null,
             'photo_path'      => $data['photo_path'] ?? null,
         ]);
+        Employee::where('company_id', $companyId)
+            ->latest('id')
+            ->first()
+            ?->activityNotes()
+            ->create([
+                'user_id' => $request->user()->id,
+                'body' => 'Empleado creado.',
+            ]);
 
         return redirect()
             ->route('company.employees.index')
@@ -96,7 +131,6 @@ class EmployeeController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('photo')) {
-            // borrar foto anterior si existe
             if ($employee->photo_path && Storage::disk('public')->exists($employee->photo_path)) {
                 Storage::disk('public')->delete($employee->photo_path);
             }
@@ -125,6 +159,10 @@ class EmployeeController extends Controller
             'notes'           => $data['notes'] ?? null,
             'photo_path'      => $data['photo_path'] ?? $employee->photo_path,
         ]);
+        $employee->activityNotes()->create([
+            'user_id' => $request->user()->id,
+            'body' => 'Empleado actualizado.',
+        ]);
 
         return redirect()
             ->route('company.employees.index')
@@ -134,11 +172,53 @@ class EmployeeController extends Controller
     public function destroy(Request $request, Employee $employee): RedirectResponse
     {
         $this->authorizeEmployee($request, $employee);
-        $employee->delete();
+
+        $data = $request->validate([
+            'comment' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $employee->update(['archived_at' => Carbon::now()]);
+        $employee->activityNotes()->create([
+            'user_id' => $request->user()->id,
+            'body' => 'Archivado: ' . $data['comment'],
+        ]);
 
         return redirect()
             ->route('company.employees.index')
-            ->with('status', 'Empleado eliminado correctamente.');
+            ->with('status', 'Empleado archivado correctamente.');
+    }
+
+    public function unarchive(Request $request, Employee $employee): RedirectResponse
+    {
+        $this->authorizeEmployee($request, $employee);
+
+        $data = $request->validate([
+            'comment' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $employee->update(['archived_at' => null]);
+        $employee->activityNotes()->create([
+            'user_id' => $request->user()->id,
+            'body' => 'Desarchivado: ' . $data['comment'],
+        ]);
+
+        return back()->with('status', 'Empleado desarchivado correctamente.');
+    }
+
+    public function storeNote(Request $request, Employee $employee): RedirectResponse
+    {
+        $this->authorizeEmployee($request, $employee);
+
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $employee->activityNotes()->create([
+            'user_id' => $request->user()->id,
+            'body' => $data['body'],
+        ]);
+
+        return back()->with('status', 'Nota registrada.');
     }
 
     private function authorizeEmployee(Request $request, Employee $employee): void
@@ -162,17 +242,19 @@ class EmployeeController extends Controller
 
         $serviceTypesOptions = $clients
             ->flatMap(fn (Client $client) => $client->services->pluck('service_type'))
-            ->merge(['Portería', 'Ronda', 'Control de acceso', 'Supervisión'])
             ->unique()
             ->values();
+
+        $positions = EmployeeType::where('company_id', $companyId)->orderBy('name')->pluck('name')->toArray();
+        $documentTypes = DocumentType::where('company_id', $companyId)->orderBy('name')->pluck('name')->toArray();
 
         return [
             'clients' => $clients,
             'clientServicesMap' => $clientServicesMap,
             'serviceTypesOptions' => $serviceTypesOptions,
-            'documentTypes' => ['CC', 'CE', 'PAS'],
+            'documentTypes' => $documentTypes,
             'rhOptions' => ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'],
-            'positions' => ['Guarda', 'Administrativo'],
+            'positions' => $positions,
             'statusOptions' => ['Activo', 'En vacaciones', 'Incapacitado', 'Desprogramado', 'Calamidad', 'Despedido'],
         ];
     }

@@ -30,6 +30,7 @@ class Memorandum extends Model
         'title',
         'body',
         'estado',
+        'final_status',
         'prioridad',
         'vence_en',
     ];

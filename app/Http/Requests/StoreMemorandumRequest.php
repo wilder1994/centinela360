@@ -21,7 +21,12 @@ class StoreMemorandumRequest extends FormRequest
             'name' => ['nullable', 'string', 'max:255'],
             'cedula' => ['nullable', 'string', 'max:255'],
             'cargo' => ['nullable', 'string', 'max:255'],
-            'title' => ['required', 'string', 'max:255'],
+            'title' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::exists('memorandum_subjects', 'name')->where('company_id', $companyId),
+            ],
             'body' => ['nullable', 'string'],
             'assigned_to' => [
                 'nullable',

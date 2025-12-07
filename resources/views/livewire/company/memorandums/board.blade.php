@@ -159,7 +159,7 @@
                             };
                         @endphp
 
-                        <tr class="{{ $rowColor }} hover:bg-slate-100 transition-colors">
+                        <tr class="{{ $rowColor }} hover:bg-slate-100 transition-colors" wire:key="ticket-{{ $t->id }}">
                             <td class="p-2 border align-top whitespace-nowrap">
                                 {{ $t->created_at->format('d/m/Y H:i') }}
                             </td>
@@ -279,6 +279,25 @@
                     @enderror
                 </div>
 
+                <div class="mb-4 mt-2 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                    <p class="text-xs font-semibold text-gray-700 mb-2">
+                        Antes de finalizar, indique si el memorando fue:
+                    </p>
+                    <div class="flex items-center gap-4 text-sm">
+                        <label class="inline-flex items-center gap-2">
+                            <input type="radio" wire:model="finalDecision" value="aprobado" class="text-[var(--primary)]">
+                            <span>Aprobado</span>
+                        </label>
+                        <label class="inline-flex items-center gap-2">
+                            <input type="radio" wire:model="finalDecision" value="negado" class="text-[var(--primary)]">
+                            <span>Negado</span>
+                        </label>
+                    </div>
+                    @error('finalDecision')
+                        <div class="text-red-600 text-xs mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <div class="flex flex-wrap justify-end gap-2 mt-4">
                     <button
                         wire:click="$set('mostrarModal', false)"
@@ -336,7 +355,16 @@
                             default   => Str::title(Str::lower($ticketDetalle->prioridad ?? '')),
                         };
                     @endphp
-                    <p><strong>Estado:</strong> {{ $estadoDetalle }}</p>
+                    @php
+                        $decision = $ticketDetalle->final_status ? Str::title($ticketDetalle->final_status) : null;
+                    @endphp
+                    <p>
+                        <strong>Estado:</strong>
+                        {{ $estadoDetalle }}
+                        @if($ticketDetalle->estado === 'finalizado' && $decision)
+                            ({{ $decision }})
+                        @endif
+                    </p>
                     <p><strong>Prioridad:</strong> {{ $prioridadDetalle }}</p>
                 </div>
 
