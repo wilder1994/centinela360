@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -9,29 +9,29 @@ use Illuminate\Support\Facades\Auth;
 | Web Routes
 |--------------------------------------------------------------------------
 |
-| Aquí se registran todas las rutas web del sistema.
-| Se cargan automáticamente por RouteServiceProvider.
+| AquÃ­ se registran todas las rutas web del sistema.
+| Se cargan automÃ¡ticamente por RouteServiceProvider.
 |
 */
 
-// 🏠 Página principal (pública)
+// ðŸ  PÃ¡gina principal (pÃºblica)
 Route::get('/', function () {
     return view('welcome');
 });
 
 Route::get('/dashboard', function () {
-    // Usamos la lógica de redirección por rol
+    // Usamos la lÃ³gica de redirecciÃ³n por rol
     return redirect()->route('redirect');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// 👤 Rutas de perfil del usuario autenticado
+// ðŸ‘¤ Rutas de perfil del usuario autenticado
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// 🔁 Redirección dinámica post-login (según rol/empresa)
+// ðŸ” RedirecciÃ³n dinÃ¡mica post-login (segÃºn rol/empresa)
 Route::get('/redirect', function () {
     $user = Auth::user();
 
@@ -39,22 +39,23 @@ Route::get('/redirect', function () {
         return redirect()->route('login');
     }
 
-    // 🔹 Si es Super Admin → Dashboard administrativo
+    // ðŸ”¹ Si es Super Admin â†’ Dashboard administrativo
     if ($user->hasRole('Super Admin')) {
         return redirect()->route('admin.dashboard');
     }
 
-    // 🔹 Si pertenece a una empresa → Dashboard empresarial
+    // ðŸ”¹ Si pertenece a una empresa â†’ Dashboard empresarial
     if ($user->company_id) {
         return redirect()->route('company.dashboard');
     }
 
-    // 🔹 Si no cumple ninguna de las anteriores → Dashboard genérico
+    // ðŸ”¹ Si no cumple ninguna de las anteriores â†’ Dashboard genÃ©rico
     return redirect()->route('company.dashboard');
 })->middleware(['auth'])->name('redirect');
 
 
-// ⚙️ Archivos de rutas específicas
+// âš™ï¸ Archivos de rutas especÃ­ficas
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/company.php';
+

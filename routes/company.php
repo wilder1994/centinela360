@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Company\ClientController;
@@ -8,6 +8,7 @@ use App\Http\Controllers\Company\EmployeeController;
 use App\Http\Controllers\Company\EmployeeCatalogController;
 use App\Http\Controllers\Company\MemorandumController;
 use App\Http\Controllers\Company\MemorandumSubjectController;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +64,20 @@ Route::middleware(['auth', 'role:Admin Empresa'])
             Route::post('/service-types', [ServiceTypeController::class, 'store'])->name('service_types.store');
             Route::put('/service-types/{serviceType}', [ServiceTypeController::class, 'update'])->name('service_types.update');
             Route::delete('/service-types/{serviceType}', [ServiceTypeController::class, 'destroy'])->name('service_types.destroy');
+            // Búsqueda rápida para selects/datalists
+            Route::get('/search', function (Request $request) {
+                $term = $request->query('q', '');
+                $companyId = $request->user()->company_id;
+                $clients = \App\Models\Client::query()
+                    ->where('company_id', $companyId)
+                    ->when($term, function ($q) use ($term) {
+                        $q->where('business_name', 'like', '%' . $term . '%');
+                    })
+                    ->orderBy('business_name')
+                    ->limit(20)
+                    ->get(['id', 'business_name']);
+                return response()->json($clients);
+            })->name('search');
         });
 
         // ---- MEMORANDOS ----
@@ -82,6 +97,12 @@ Route::middleware(['auth', 'role:Admin Empresa'])
         Route::put('memorandum-subjects/{subject}', [MemorandumSubjectController::class, 'update'])->name('memorandum_subjects.update');
         Route::delete('memorandum-subjects/{subject}', [MemorandumSubjectController::class, 'destroy'])->name('memorandum_subjects.destroy');
 
+        // Turnos (catálogo por empresa)
+        Route::get('turnos', [\App\Http\Controllers\Company\TurnoController::class, 'index'])->name('turnos.index');
+        Route::post('turnos', [\App\Http\Controllers\Company\TurnoController::class, 'store'])->name('turnos.store');
+        Route::put('turnos/{turno}', [\App\Http\Controllers\Company\TurnoController::class, 'update'])->name('turnos.update');
+        Route::delete('turnos/{turno}', [\App\Http\Controllers\Company\TurnoController::class, 'destroy'])->name('turnos.destroy');
+
         // Aqui puedes adicionar mas secciones del panel de empresa en el futuro...
 
     });
@@ -94,3 +115,4 @@ Route::middleware(['auth', 'role:Admin Empresa'])
         Route::get('users/create', \App\Livewire\Company\Users\Create::class)->name('users.create');
         Route::get('users/{user}/edit', \App\Livewire\Company\Users\Edit::class)->name('users.edit');
     });
+
