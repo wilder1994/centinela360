@@ -9,6 +9,7 @@ use App\Http\Controllers\Company\EmployeeCatalogController;
 use App\Http\Controllers\Company\MemorandumController;
 use App\Http\Controllers\Company\MemorandumSubjectController;
 use Illuminate\Http\Request;
+use App\Models\Employee;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +48,23 @@ Route::middleware(['auth', 'role:Admin Empresa'])
             Route::post('/catalogs', [EmployeeCatalogController::class, 'storeType'])->name('catalogs.store');
             Route::put('/catalogs/{catalog}/{id}', [EmployeeCatalogController::class, 'updateType'])->name('catalogs.update');
             Route::delete('/catalogs/{catalog}/{id}', [EmployeeCatalogController::class, 'destroyType'])->name('catalogs.destroy');
+
+            // Empleados por cliente (para selects dinámicos)
+            Route::get('/by-client', function (Request $request) {
+                $companyId = $request->user()->company_id;
+                $clientId = $request->query('client_id');
+                if (!$clientId) {
+                    return response()->json([]);
+                }
+                $employees = Employee::query()
+                    ->where('company_id', $companyId)
+                    ->where('client_id', $clientId)
+                    ->orderBy('first_name')
+                    ->orderBy('last_name')
+                    ->get(['id', 'first_name', 'last_name', 'document_number']);
+
+                return response()->json($employees);
+            })->name('by_client');
         });
 
         // ---- BASE DE DATOS - CLIENTES ----

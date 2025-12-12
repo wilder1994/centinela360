@@ -27,26 +27,68 @@
         --col-day: calc((100% - (var(--col-id) + var(--col-name))) / 31);
     }
     .turno-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
-    .turno-table th, .turno-table td { border: 1px solid var(--border); padding: 0.3rem; vertical-align: middle; }
+    .turno-table th, .turno-table td {
+        border: 1px solid var(--border);
+        padding: 0.3rem;
+        vertical-align: middle;
+        height: 38px;
+    }
     .cell-id { width: var(--col-id); min-width: var(--col-id); }
     .cell-name { width: var(--col-name); min-width: var(--col-name); }
     .turno-cell { padding: 0 !important; }
-    .turno-select {
-        width: 100%; height: 100%;
-        padding: 0;
-        border: 0;
+    .turno-input-cell {
+        width: 100%;
+        height: 100%;
+        border: none;
         background: transparent;
         color: #e2e8f0;
         text-align: center;
-        font-size: 11px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        line-height: 36px;
+        caret-color: #e2e8f0;
+        -webkit-text-fill-color: currentColor;
+        padding: 0;
+        appearance: none;
+        -webkit-appearance: none;
     }
-    .turno-select:focus { outline: 1px solid var(--primary); }
+    .turno-input-cell::-webkit-calendar-picker-indicator { display: none !important; }
+    .turno-input-cell:focus { outline: none; box-shadow: inset 0 0 0 1px var(--primary); }
     .turno-input {
         width: 100%; height: 100%;
         padding: 0.35rem 0.4rem;
         background: transparent;
         border: none;
         color: #e2e8f0;
+    }
+    .client-select {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        color: #e2e8f0;
+        text-align: center;
+        font-weight: 600;
+        padding: 0.35rem 0.5rem;
+    }
+    .client-select:focus {
+        outline: none;
+        box-shadow: inset 0 0 0 1px var(--primary);
+    }
+    .employee-select {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        color: #e2e8f0;
+        text-align: left;
+        padding: 0.35rem 0.5rem;
+    }
+    .employee-select:focus {
+        outline: none;
+        box-shadow: inset 0 0 0 1px var(--primary);
     }
 </style>
 <div class="text-white space-y-6" style="
@@ -104,7 +146,7 @@
                         <th class="head-cell text-center" colspan="31">
                             <div class="w-full h-full">
                                 <input id="client-search" list="client-options" autocomplete="off"
-                                       class="w-full h-full bg-transparent border border-slate-700 rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-primary text-center"
+                                       class="client-select"
                                        placeholder="Seleccione un cliente o escriba para buscar">
                                 <input type="hidden" id="client-selected-id">
                                 <datalist id="client-options">
@@ -133,13 +175,15 @@
                         @endforeach
                     </tr>
                     <tr>
-                        <td class="cell-id text-sm text-white whitespace-nowrap">10.234.567</td>
-                        <td class="cell-name text-sm text-white whitespace-nowrap">Nombre del guarda</td>
+                        <td class="cell-id text-sm text-white whitespace-nowrap"><span id="employee-document">-</span></td>
+                        <td class="cell-name text-sm text-white whitespace-nowrap">
+                            <select id="employee-select" class="employee-select">
+                                <option value="">Seleccione el cliente primero</option>
+                            </select>
+                        </td>
                         @foreach ($days as $day)
                             <td class="turno-cell">
-                                <select class="turno-select">
-                                    {!! $turnOptionsHtml !!}
-                                </select>
+                                <input class="turno-input-cell day-turn" maxlength="2">
                             </td>
                         @endforeach
                     </tr>
@@ -148,6 +192,8 @@
         </div>
     </div>
 </div>
+
+<datalist id="turno-codes-list"></datalist>
 
 @include('company.programming.turno-modal')
 
@@ -158,6 +204,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const clientInput = document.getElementById('client-search');
     const clientDatalist = document.getElementById('client-options');
     const clientHidden = document.getElementById('client-selected-id');
+    const employeeSelect = document.getElementById('employee-select');
+    const employeeDocument = document.getElementById('employee-document');
+    const dayTurnInputs = Array.from(document.querySelectorAll('.day-turn'));
+    const turnoCodesList = document.getElementById('turno-codes-list');
+    let currentEmployees = [];
 
     const rowsPerCard = 4;
     const maxCards = 5;
@@ -256,6 +307,51 @@ document.addEventListener('DOMContentLoaded', () => {
         clientHidden.value = match ? match.dataset.id || '' : '';
     };
 
+    const fillEmployeeOptions = (items) => {
+        currentEmployees = items;
+        if (!employeeSelect) return;
+        employeeSelect.innerHTML = '';
+        if (!items.length) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = clientHidden?.value ? 'No hay empleados para el cliente' : 'Seleccione el cliente primero';
+            employeeSelect.appendChild(opt);
+            employeeSelect.disabled = true;
+            if (employeeDocument) employeeDocument.textContent = '-';
+            return;
+        }
+        employeeSelect.disabled = false;
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Seleccione empleado';
+        employeeSelect.appendChild(placeholder);
+        items.forEach((emp) => {
+            const opt = document.createElement('option');
+            opt.value = emp.id;
+            opt.textContent = `${emp.first_name ?? ''} ${emp.last_name ?? ''}`.trim() || emp.id;
+            employeeSelect.appendChild(opt);
+        });
+        if (employeeDocument) employeeDocument.textContent = '-';
+    };
+
+    const loadEmployeesForClient = async () => {
+        if (!clientHidden || !clientHidden.value) {
+            fillEmployeeOptions([]);
+            return;
+        }
+        try {
+            const data = await fetchJson(`{{ route('company.employees.by_client') }}?client_id=${clientHidden.value}`);
+            if (Array.isArray(data)) {
+                fillEmployeeOptions(data);
+            } else {
+                fillEmployeeOptions([]);
+            }
+        } catch (e) {
+            console.error('Error cargando empleados', e);
+            fillEmployeeOptions([]);
+        }
+    };
+
     const loadTurnos = async () => {
         try {
             const data = await fetchJson('{{ route('company.turnos.index') }}');
@@ -282,6 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn('Respuesta inesperada para turnos:', data);
                 turnos = [];
             }
+            refreshTurnoCodesDatalist();
             renderCards();
         } catch (e) {
             console.error('Error cargando turnos', e);
@@ -324,6 +421,17 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             cardsContainer.appendChild(card);
         }
+    };
+
+    const refreshTurnoCodesDatalist = () => {
+        if (!turnoCodesList) return;
+        turnoCodesList.innerHTML = '';
+        turnos.forEach((t) => {
+            const opt = document.createElement('option');
+            opt.value = t.code;
+            opt.dataset.color = t.color;
+            turnoCodesList.appendChild(opt);
+        });
     };
 
     const setColor = (value) => {
@@ -441,11 +549,102 @@ document.addEventListener('DOMContentLoaded', () => {
     modalCancel.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
+    fillEmployeeOptions([]);
     if (clientInput) {
         clientInput.addEventListener('input', debounce(() => handleClientInput(clientInput.value), 250));
         clientInput.addEventListener('change', syncClientSelection);
-        clientInput.addEventListener('blur', syncClientSelection);
+        clientInput.addEventListener('blur', () => { syncClientSelection(); loadEmployeesForClient(); });
     }
+
+    employeeSelect?.addEventListener('change', () => {
+        if (!employeeDocument) return;
+        const found = currentEmployees.find((emp) => String(emp.id) === String(employeeSelect.value));
+        employeeDocument.textContent = found?.document_number || '-';
+    });
+
+    const getContrastColor = (hex) => {
+        if (!hex || typeof hex !== 'string') return '#0b1220';
+        const raw = hex.replace('#', '');
+        if (![3,6].includes(raw.length)) return '#0b1220';
+        const full = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw;
+        const r = parseInt(full.substring(0,2), 16);
+        const g = parseInt(full.substring(2,4), 16);
+        const b = parseInt(full.substring(4,6), 16);
+        const luminance = 0.299*r + 0.587*g + 0.114*b;
+        return luminance > 150 ? '#0b1220' : '#f8fafc';
+    };
+
+    const applyTurnColor = (input, code) => {
+        const found = turnos.find((t) => t.code.toUpperCase() === code.toUpperCase());
+        if (found) {
+            const upper = found.code.toUpperCase();
+            input.value = upper;
+            const bg = found.color || 'transparent';
+            const fg = getContrastColor(found.color);
+            input.style.background = bg;
+            input.style.setProperty('color', fg, 'important');
+            input.style.setProperty('-webkit-text-fill-color', fg, 'important');
+            input.style.setProperty('font-weight', '700', 'important');
+            input.style.setProperty('text-transform', 'uppercase', 'important');
+        } else {
+            input.value = code;
+            input.style.background = 'transparent';
+            input.style.setProperty('color', '#e2e8f0', 'important');
+            input.style.setProperty('-webkit-text-fill-color', '#e2e8f0', 'important');
+            input.style.removeProperty('font-weight');
+        }
+    };
+
+    const handleTurnInput = (input) => {
+        const raw = (input.value || '').trim();
+        const value = raw.toUpperCase();
+        if (!value) {
+            applyTurnColor(input, '');
+            return;
+        }
+        const found = turnos.find((t) => t.code.toUpperCase() === value);
+        if (!found) {
+            alert('este valor no es valido');
+            input.value = '';
+            applyTurnColor(input, '');
+            return;
+        }
+        applyTurnColor(input, value);
+    };
+
+    const showTurnPicker = (inp) => {
+        // Forzar apertura de datalist
+        if (typeof inp.showPicker === 'function') {
+            try { inp.showPicker(); return; } catch (e) {}
+        }
+        setTimeout(() => {
+            const ev = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true });
+            inp.dispatchEvent(ev);
+        }, 10);
+    };
+
+    dayTurnInputs.forEach((inp) => {
+        inp.setAttribute('list', 'turno-codes-list');
+        inp.addEventListener('change', () => handleTurnInput(inp));
+        inp.addEventListener('blur', () => {
+            // si no eligió nada, restaurar el valor anterior
+            if (!inp.value && inp.dataset.prevTurnCode) {
+                inp.value = inp.dataset.prevTurnCode;
+                handleTurnInput(inp);
+            } else {
+                handleTurnInput(inp);
+            }
+            inp.dataset.prevTurnCode = '';
+        });
+        inp.addEventListener('focus', () => {
+            const current = (inp.value || '').trim();
+            inp.dataset.prevTurnCode = current;
+            // limpiar para que el datalist muestre todas las opciones
+            inp.value = '';
+            setTimeout(() => showTurnPicker(inp), 0);
+        });
+        inp.addEventListener('input', () => applyTurnColor(inp, (inp.value || '').trim().toUpperCase()));
+    });
 
     loadTurnos();
 });
