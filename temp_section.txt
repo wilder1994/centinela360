@@ -1,0 +1,120 @@
+﻿@extends('layouts.company')
+
+@php
+    use Carbon\Carbon;
+
+    $today = now()->locale('es');
+    $firstDay = $today->copy()->startOfMonth();
+    $days = collect(range(1, 31))->map(fn ($day) => $firstDay->copy()->addDays($day - 1));
+
+    $items = [
+        ['label' => 'Descanso', 'code' => 'Z'],
+        ['label' => 'Diurno', 'code' => 'D'],
+        ['label' => 'Nocturno', 'code' => 'N'],
+        ['label' => 'Reserva', 'code' => 'R'],
+    ];
+
+    $turnOptionsHtml = '<option value="">-</option>';
+    foreach ($items as $item) {
+        $turnOptionsHtml .= "<option value=\"{$item['code']}\">{$item['code']}</option>";
+    }
+@endphp
+
+@section('content')
+<style>
+    :root {
+        --col-id: 12rem;
+        --col-name: 14rem;
+        --col-day: calc((100% - (var(--col-id) + var(--col-name))) / 31);
+    }
+    .turno-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+    .turno-table th, .turno-table td { border: 1px solid var(--border); padding: 0.3rem; vertical-align: middle; }
+    .cell-id { width: var(--col-id); min-width: var(--col-id); }
+    .cell-name { width: var(--col-name); min-width: var(--col-name); }
+    .turno-cell { padding: 0 !important; }
+    .turno-select {
+        width: 100%; height: 100%;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #e2e8f0;
+        text-align: center;
+        font-size: 11px;
+    }
+    .turno-select:focus { outline: 1px solid var(--primary); }
+    .turno-input {
+        width: 100%; height: 100%;
+        padding: 0.35rem 0.4rem;
+        background: transparent;
+        border: none;
+        color: #e2e8f0;
+    }
+</style>
+<div class="text-white space-y-6" style="
+    --primary: var(--primary-color, #22d3ee);
+    --secondary: var(--secondary-color, #0f1827);
+    --panel: color-mix(in srgb, var(--secondary) 85%, #000 15%);
+    --card: color-mix(in srgb, var(--secondary) 78%, #000 22%);
+    --border: rgba(255,255,255,0.08);
+">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">ProgramaciÃ³n</p>
+            <h1 class="text-3xl font-semibold text-gray-900">Crear malla operativa</h1>
+        </div>
+        <div class="flex gap-2">
+            <a href="{{ route('company.programming.index') }}" class="px-4 py-2 border border-gray-700 text-gray-200 rounded-md hover:bg-gray-800 transition">Volver</a>
+            <button class="px-4 py-2 rounded-md shadow-sm opacity-60 cursor-not-allowed" style="background: var(--primary); color: #0b1220;">Guardar (prÃ³ximamente)</button>
+        </div>
+    </div>
+
+    <div class="rounded-xl shadow-lg p-5 space-y-4" style="background: var(--panel); border: 1px solid var(--border);">
+        <div class="flex justify-center gap-3 pb-4">
+            <button class="px-4 py-2 text-xs font-semibold rounded-md border border-slate-700 hover:bg-slate-800 transition">Crear item</button>
+            <button class="px-4 py-2 text-xs font-semibold rounded-md border border-slate-700 hover:bg-slate-800 transition">Editar item</button>
+            <button class="px-4 py-2 text-xs font-semibold rounded-md border border-slate-700 hover:bg-slate-800 transition">Eliminar item</button>
+        </div>
+
+        <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            @for ($card = 0; $card < 5; $card++)
+                <div class="rounded-lg border border-slate-800/70 overflow-hidden" style="background: var(--card);">
+                    <table class="w-full text-xs text-gray-200 border-collapse">
+                        <thead class="bg-slate-900/60 text-gray-300">
+                            <tr>
+                                <th class="px-3 py-2 border-b border-slate-800/70 text-left">Item de turno</th>
+                                <th class="px-3 py-2 border-b border-slate-800/70 text-left">Descripcion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for ($i = 0; $i < 4; $i++)
+                                @php $turno = $items[$i] ?? null; @endphp
+                                <tr class="border-b border-slate-800/60 last:border-b-0">
+                                    <td class="px-3 py-2">
+                                        @if($turno)
+                                            <span class="inline-flex items-center gap-2">
+                                                <span class="h-2.5 w-2.5 rounded-full" style="background: currentColor;"></span>
+                                                <span class="font-semibold">{{ $turno['code'] }}</span>
+                                            </span>
+                                        @else
+                                            <span class="text-slate-500">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-3 py-2 font-semibold">{{ $turno['label'] ?? 'Sin definir' }}</td>
+                                </tr>
+                            @endfor
+                        </tbody>
+                    </table>
+                </div>
+            @endfor
+        </div>
+    </div>
+
+    <div class="rounded-xl shadow-lg p-5 overflow-hidden" style="background: var(--panel); border: 1px solid var(--border);">
+        <div class="overflow-hidden w-full" style="background: var(--card); border: 1px solid var(--border); border-top: 0;">
+            <table class="turno-table text-xs text-gray-200">
+                <colgroup>
+                    <col style="width: var(--col-id);">
+                    <col style="width: var(--col-name);">
+                    @for ($i = 0; $i < 31; $i++)
+                        <col style="width: var(--col-day);">
+                    @endfor
