@@ -29,9 +29,8 @@ Route::middleware(['auth', 'role:Admin Empresa'])
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-        // Programming (vista simple)
+        // Programación operativa (placeholder)
         Route::view('programming', 'company.programming.index')->name('programming.index');
-        Route::view('programming/create', 'company.programming.create')->name('programming.create');
 
         // ---- BASE DE DATOS - EMPLEADOS ----
         Route::prefix('employees')->name('employees.')->group(function () {
@@ -115,12 +114,6 @@ Route::middleware(['auth', 'role:Admin Empresa'])
         Route::put('memorandum-subjects/{subject}', [MemorandumSubjectController::class, 'update'])->name('memorandum_subjects.update');
         Route::delete('memorandum-subjects/{subject}', [MemorandumSubjectController::class, 'destroy'])->name('memorandum_subjects.destroy');
 
-        // Turnos (catálogo por empresa)
-        Route::get('turnos', [\App\Http\Controllers\Company\TurnoController::class, 'index'])->name('turnos.index');
-        Route::post('turnos', [\App\Http\Controllers\Company\TurnoController::class, 'store'])->name('turnos.store');
-        Route::put('turnos/{turno}', [\App\Http\Controllers\Company\TurnoController::class, 'update'])->name('turnos.update');
-        Route::delete('turnos/{turno}', [\App\Http\Controllers\Company\TurnoController::class, 'destroy'])->name('turnos.destroy');
-
         // Aqui puedes adicionar mas secciones del panel de empresa en el futuro...
 
     });
@@ -133,4 +126,3 @@ Route::middleware(['auth', 'role:Admin Empresa'])
         Route::get('users/create', \App\Livewire\Company\Users\Create::class)->name('users.create');
         Route::get('users/{user}/edit', \App\Livewire\Company\Users\Edit::class)->name('users.edit');
     });
-

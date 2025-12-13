@@ -1,65 +1,80 @@
-@extends('layouts.company')
+﻿@extends('layouts.company')
 
 @section('content')
-<div class="text-white space-y-6">
-
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <p class="text-sm uppercase tracking-wide text-gray-500">Operaciones</p>
-            <h1 class="text-3xl font-semibold text-white">Programaci?n operativa</h1>
-            <p class="text-gray-400 text-sm mt-1">Administra mallas, disponibilidad y reportes desde un solo lugar.</p>
-        </div>
-        <div class="flex gap-2">
-            <a href="{{ route('company.programming.create') }}" class="px-4 py-2 border border-gray-700 text-gray-200 rounded-md hover:bg-gray-800 transition">Nueva malla</a>
-            <button class="px-4 py-2 bg-primary text-white rounded-md shadow-sm hover:brightness-110 transition">Exportar</button>
-        </div>
-    </div>
-
-    <div class="bg-gray-900 border border-gray-800 rounded-lg">
-        <div class="flex flex-wrap gap-2 border-b border-gray-800 p-4">
-            <button class="px-4 py-2 bg-primary text-white border border-primary rounded-md font-medium">Mallas</button>
-            <button class="px-4 py-2 text-gray-300 bg-gray-800 border border-gray-700 rounded-md hover:bg-gray-700">Disponibles</button>
-            <button class="px-4 py-2 text-gray-300 bg-gray-800 border border-gray-700 rounded-md hover:bg-gray-700">Cartas de presentaci?n</button>
-            <button class="px-4 py-2 text-gray-300 bg-gray-800 border border-gray-700 rounded-md hover:bg-gray-700">Reportes radiales</button>
+<div class="text-white space-y-4">
+    {{-- Botones de acciones principales --}}
+    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 text-gray-300">
+        <div class="flex flex-wrap items-center justify-center gap-3">
+            <button id="btn-turno-create" class="px-4 py-2 bg-primary text-white rounded-md shadow-sm hover:brightness-110 transition">Crear turno</button>
+            <button id="btn-turno-edit" class="px-4 py-2 bg-gray-800 text-gray-200 border border-gray-700 rounded-md hover:bg-gray-700 transition">Editar turno</button>
+            <button class="px-4 py-2 bg-rose-600/80 text-white rounded-md shadow-sm hover:bg-rose-600 transition">Eliminar turno</button>
+            <button class="px-4 py-2 bg-emerald-600/90 text-white rounded-md shadow-sm hover:bg-emerald-600 transition">Crear malla</button>
+            <button class="px-4 py-2 bg-amber-600/90 text-white rounded-md shadow-sm hover:bg-amber-600 transition">Eliminar malla</button>
         </div>
 
-        <div class="p-4 space-y-4">
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
-                <div class="flex-1 flex items-center gap-3">
-                    <input type="text" class="w-full bg-gray-800 border border-gray-700 text-gray-300 rounded-md px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Buscar por: c?dula, nombre de guarda o nombre del puesto...">
+        {{-- Tarjetas en fila con tablas (placeholder) --}}
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+            @for ($i = 1; $i <= 5; $i++)
+                <div class="bg-gray-800/60 border border-gray-700 rounded-md px-4 py-3 w-full">
+                    <table class="w-full text-xs text-gray-300 border border-gray-700/60 rounded-md overflow-hidden">
+                        <tbody>
+                            <tr class="bg-gray-900/80 border-b border-gray-700/50">
+                                <td class="px-2 py-2 text-white font-semibold uppercase tracking-wide">Turno</td>
+                                <td class="px-2 py-2 text-white font-semibold uppercase tracking-wide">Descripcion</td>
+                            </tr>
+                            @for ($row = 2; $row <= 5; $row++)
+                                <tr class="{{ $row % 2 === 0 ? 'bg-gray-800/80' : 'bg-gray-800/40' }} border-b border-gray-700/50 last:border-none">
+                                    <td class="px-2 py-2 text-gray-400">Fila {{ $row - 1 }}</td>
+                                    <td class="px-2 py-2 text-white/80">Columna 2</td>
+                                </tr>
+                            @endfor
+                        </tbody>
+                    </table>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button class="px-4 py-2 bg-primary text-white rounded-md hover:brightness-110 transition">Buscar</button>
-                    <button class="px-4 py-2 bg-gray-800 text-gray-200 border border-gray-700 rounded-md hover:bg-gray-700 transition">Limpiar</button>
-                </div>
-            </div>
-
-            <div class="flex flex-wrap gap-2 text-sm text-gray-200">
-                <span class="px-3 py-1 bg-gray-800 border border-gray-700 rounded">1er descanso</span>
-                <span class="px-3 py-1 bg-gray-800 border border-gray-700 rounded">2do descanso</span>
-                <span class="px-3 py-1 bg-gray-800 border border-gray-700 rounded">Vacaciones</span>
-                <span class="px-3 py-1 bg-gray-800 border border-gray-700 rounded">Incapacitados</span>
-                <span class="px-3 py-1 bg-gray-800 border border-gray-700 rounded">Relevantes</span>
-                <span class="px-3 py-1 bg-gray-800 border border-gray-700 rounded">Guardas por puesto</span>
-                <span class="px-3 py-1 bg-gray-800 border border-gray-700 rounded">Historial por puesto</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 text-gray-300 space-y-4">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h2 class="text-xl font-semibold text-white">Malla programada</h2>
-                <p class="text-sm text-gray-400">Filtra por c?dula, nombre o puesto para ver asignaciones.</p>
-            </div>
-            <div class="flex flex-wrap gap-2 text-xs">
-                <span class="px-3 py-1 bg-gray-800 border border-gray-700 rounded">Semana actual</span>
-                <span class="px-3 py-1 bg-gray-800 border border-gray-700 rounded">Total guardas: 0</span>
-            </div>
-        </div>
-        <div class="border border-dashed border-gray-700 rounded-md p-6 text-center text-gray-500">
-            Aqu? se mostrar? la tabla o malla filtrada.
+            @endfor
         </div>
     </div>
 </div>
+
+{{-- Modal para formulario de turnos --}}
+<div id="turno-modal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/70">
+    <div class="bg-gray-900 border border-gray-800 rounded-lg shadow-2xl w-full max-w-xl mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Turnos</p>
+                <h3 id="turno-form-title" class="text-white text-lg font-semibold">Crear turno</h3>
+            </div>
+            <button id="btn-turno-close" class="text-gray-400 hover:text-white text-xl">&times;</button>
+        </div>
+        @include('company.programming.partials.turno-form')
+    </div>
+</div>
+
+<script>
+// Control básico del modal de turnos (abrir/cerrar según botón)
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('turno-modal');
+    const title = document.getElementById('turno-form-title');
+    const btnCreate = document.getElementById('btn-turno-create');
+    const btnEdit = document.getElementById('btn-turno-edit');
+    const btnClose = document.getElementById('btn-turno-close');
+
+    const openModal = (mode) => {
+        if (!modal) return;
+        title.textContent = mode === 'edit' ? 'Editar turno' : 'Crear turno';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    };
+    const closeModal = () => {
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    };
+
+    btnCreate?.addEventListener('click', (e) => { e.preventDefault(); openModal('create'); });
+    btnEdit?.addEventListener('click', (e) => { e.preventDefault(); openModal('edit'); });
+    btnClose?.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
+    modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+});
+</script>
 @endsection
