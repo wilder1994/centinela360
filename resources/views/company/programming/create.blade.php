@@ -49,18 +49,35 @@
                     @endif
                 @endfor
             </colgroup>
-            <thead class="bg-gray-50 border-b border-gray-200">
-                <tr>
-                    @for ($c = 1; $c <= 33; $c++)
-                        <th class="px-2 py-2 text-left font-semibold uppercase tracking-wide text-transparent border border-black min-h-[36px] bg-white">&nbsp;</th>
-                    @endfor
-                </tr>
-            </thead>
             <tbody>
                 @for ($i = 1; $i <= 5; $i++)
                     <tr class="{{ $i % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} border-b border-gray-200 last:border-none">
                         @for ($c = 1; $c <= 33; $c++)
-                            <td class="px-2 py-2 border border-black min-h-[32px] text-transparent bg-white">&nbsp;</td>
+                            @if ($c === 1)
+                                @if ($i === 1)
+                                    <td class="px-2 py-1 border border-black text-transparent bg-white" rowspan="3">&nbsp;</td>
+                                @elseif ($i <= 3)
+                                    @continue
+                                @else
+                                    <td class="px-2 py-1 border border-black text-transparent bg-white">&nbsp;</td>
+                                @endif
+                            @elseif ($c === 2)
+                                @if ($i === 1)
+                                    <td class="px-2 py-1 border border-black text-transparent bg-white" rowspan="3">&nbsp;</td>
+                                @elseif ($i <= 3)
+                                    @continue
+                                @else
+                                    <td class="px-2 py-1 border border-black text-transparent bg-white">&nbsp;</td>
+                                @endif
+                            @elseif ($i === 1 && $c === 3)
+                                <td class="px-2 py-1 border border-black text-transparent bg-white" colspan="31">&nbsp;</td>
+                                @break
+                            @elseif ($i === 2 && $c === 3)
+                                <td class="px-2 py-1 border border-black text-transparent bg-white" colspan="31">&nbsp;</td>
+                                @break
+                            @else
+                                <td class="px-2 py-1 border border-black text-transparent bg-white">&nbsp;</td>
+                            @endif
                         @endfor
                     </tr>
                 @endfor
