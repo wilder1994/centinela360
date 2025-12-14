@@ -7,6 +7,7 @@ use App\Http\Controllers\Company\DashboardController;
 use App\Http\Controllers\Company\EmployeeController;
 use App\Http\Controllers\Company\EmployeeCatalogController;
 use App\Http\Controllers\Company\MemorandumController;
+use App\Http\Controllers\Company\ProgrammingController;
 use App\Http\Controllers\Company\MemorandumSubjectController;
 use Illuminate\Http\Request;
 use App\Models\Employee;
@@ -29,11 +30,12 @@ Route::middleware(['auth', 'role:Admin Empresa'])
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-        // Programación operativa (placeholder)
-        Route::view('programming', 'company.programming.index')->name('programming.index');
-        Route::view('programming/create', 'company.programming.create')->name('programming.create');
+        // Programaci?n operativa
+        Route::get('programming', [ProgrammingController::class, 'index'])->name('programming.index');
+        Route::get('programming/create', [ProgrammingController::class, 'create'])->name('programming.create');
+        Route::post('programming', [ProgrammingController::class, 'store'])->name('programming.store');
 
-        // ---- BASE DE DATOS - EMPLEADOS ----
+                // ---- BASE DE DATOS - EMPLEADOS ----
         Route::prefix('employees')->name('employees.')->group(function () {
             Route::get('/', [EmployeeController::class, 'index'])->name('index');
             Route::get('/archived', [EmployeeController::class, 'archived'])->name('archived');
