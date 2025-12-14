@@ -35,6 +35,32 @@
             @endfor
         </div>
     </div>
+    {{-- malla de programacion --}}
+    <div class="overflow-x-auto mt-8">
+        <table class="min-w-full text-sm text-gray-700 border border-black overflow-hidden" style="table-layout: fixed;">
+            <colgroup>
+                @for ($c = 1; $c <= 33; $c++)
+                    <col style="width:3%;">
+                @endfor
+            </colgroup>
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    @for ($c = 1; $c <= 33; $c++)
+                        <th class="px-2 py-2 text-left font-semibold uppercase tracking-wide text-transparent border border-black min-h-[36px] bg-white">&nbsp;</th>
+                    @endfor
+                </tr>
+            </thead>
+            <tbody>
+                @for ($i = 1; $i <= 5; $i++)
+                    <tr class="{{ $i % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} border-b border-gray-200 last:border-none">
+                        @for ($c = 1; $c <= 33; $c++)
+                            <td class="px-2 py-2 border border-black min-h-[32px] text-transparent bg-white">&nbsp;</td>
+                        @endfor
+                    </tr>
+                @endfor
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {{-- Modal para formulario de turnos --}}
