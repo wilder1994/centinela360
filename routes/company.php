@@ -31,6 +31,7 @@ Route::middleware(['auth', 'role:Admin Empresa'])
 
         // Programación operativa (placeholder)
         Route::view('programming', 'company.programming.index')->name('programming.index');
+        Route::view('programming/create', 'company.programming.create')->name('programming.create');
 
         // ---- BASE DE DATOS - EMPLEADOS ----
         Route::prefix('employees')->name('employees.')->group(function () {
