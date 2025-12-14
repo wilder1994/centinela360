@@ -40,7 +40,13 @@
         <table class="min-w-full text-sm text-gray-700 border border-black overflow-hidden" style="table-layout: fixed;">
             <colgroup>
                 @for ($c = 1; $c <= 33; $c++)
-                    <col style="width:3%;">
+                    @if ($c === 1)
+                        <col style="width:7%;">
+                    @elseif ($c === 2)
+                        <col style="width:15%;">
+                    @else
+                        <col style="width:2.3%;">
+                    @endif
                 @endfor
             </colgroup>
             <thead class="bg-gray-50 border-b border-gray-200">
