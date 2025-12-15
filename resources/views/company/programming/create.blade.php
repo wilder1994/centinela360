@@ -7,6 +7,7 @@
     $company = $company ?? auth()->user()->company;
     $clients = $clients ?? collect();
     $turns = $turns ?? collect();
+    $employees = $employees ?? collect();
     $turnData = $turns->map(function ($t) {
         return [
             'id' => $t->id,
@@ -15,6 +16,14 @@
             'color' => $t->color,
         ];
     });
+    $employeesByClient = $employees
+        ->groupBy('client_id')
+        ->map(fn ($items) => $items->map(fn ($e) => [
+            'id' => $e->id,
+            'name' => trim(($e->first_name ?? '') . ' ' . ($e->last_name ?? '')),
+            'document' => $e->document_number,
+        ])->values())
+        ->toArray();
 @endphp
 
 {{-- Acciones principales de turnos/mallas --}}
@@ -46,6 +55,7 @@
             <button id="btn-turno-delete" class="px-4 py-1 rounded-full border border-[var(--primary)]/70 text-[var(--primary)]/80 bg-white shadow-[0_5px_18px_-8px_var(--primary)] hover:bg-[var(--primary)]/10 transition">Eliminar turno</button>
             <button class="px-4 py-1 rounded-full border border-[var(--primary)] text-[var(--primary)] bg-white shadow-[0_5px_18px_-8px_var(--primary)] hover:bg-[var(--primary)]/5 transition">Crear malla</button>
             <button class="px-4 py-1 rounded-full border border-[var(--secondary)] text-[var(--secondary)] bg-white shadow-[0_5px_18px_-8px_var(--secondary)] hover:bg-[var(--secondary)]/5 transition">Eliminar malla</button>
+            <button id="btn-calendar" class="px-4 py-1 rounded-full border border-[var(--primary)] text-white bg-[var(--primary)] shadow-[0_5px_18px_-8px_var(--primary)] hover:brightness-110 transition">Calendario</button>
         </div>
 
         <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
@@ -86,11 +96,11 @@
             <colgroup>
                 @for ($c = 1; $c <= 33; $c++)
                     @if ($c === 1)
-                        <col style="width:6%;">
+                        <col style="width:10%;">
                     @elseif ($c === 2)
-                        <col style="width:9%;">
+                        <col style="width:15%;">
                     @else
-                        <col style="width:2.74%;">
+                        <col style="width:2.42%;">
                     @endif
                 @endfor
             </colgroup>
@@ -117,20 +127,32 @@
                 {{-- Fila 3 (celdas individuales) --}}
                 <tr class="bg-gray-50 border-b border-gray-200">
                     @for ($c = 3; $c <= 33; $c++)
-                        <td class="px-2 py-1 border border-black text-transparent bg-white">&nbsp;</td>
+                        <td class="px-2 py-1 border border-black text-center text-gray-800 bg-white" data-day-name>&nbsp;</td>
                     @endfor
                 </tr>
                 {{-- Fila 4 (celdas individuales) --}}
                 <tr class="bg-white border-b border-gray-200">
                     @for ($c = 1; $c <= 33; $c++)
-                        <td class="px-2 py-1 border border-black text-transparent bg-white">&nbsp;</td>
+                        @if ($c === 1)
+                            <td class="px-2 py-1 border border-black bg-white text-center font-semibold text-gray-800">Cedula</td>
+                        @elseif ($c === 2)
+                            <td class="px-2 py-1 border border-black bg-white text-center font-semibold text-gray-800">Nombre</td>
+                        @else
+                            <td class="px-2 py-1 border border-black text-center text-gray-800 bg-white" data-day-number>&nbsp;</td>
+                        @endif
                     @endfor
                 </tr>
                 {{-- Fila 5 (turnos en col 3-33, editable) --}}
                 <tr class="bg-gray-50 border-b border-gray-200">
                     @for ($c = 1; $c <= 33; $c++)
-                        @if ($c <= 2)
-                            <td class="px-2 py-1 border border-black text-transparent bg-white">&nbsp;</td>
+                        @if ($c === 1)
+                            <td class="px-2 py-1 border border-black bg-white text-center text-gray-800" data-employee-doc>&nbsp;</td>
+                        @elseif ($c === 2)
+                            <td class="px-2 py-1 border border-black bg-white">
+                                <select id="employee-select" class="employee-select" disabled>
+                                    <option value="" selected>Seleccione cliente</option>
+                                </select>
+                            </td>
                         @else
                             <td class="border border-black bg-white p-0" data-turn-cell>
                                 <input class="turn-input block w-full h-full text-center" autocomplete="off" placeholder="" />
@@ -163,6 +185,41 @@
                 <button type="submit" class="px-4 py-2 rounded-full border border-[var(--primary)] text-white bg-[var(--primary)] hover:brightness-110">Guardar</button>
             </div>
         </form>
+    </div>
+</div>
+
+{{-- Modal calendario --}}
+<div id="calendar-modal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/60">
+    <div class="bg-white border border-gray-200 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-gray-500">Malla de programación</p>
+                <h3 class="text-gray-900 text-lg font-semibold">Seleccionar mes y año</h3>
+            </div>
+            <button id="btn-calendar-close" class="text-gray-500 hover:text-gray-800 text-xl">&times;</button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Mes</label>
+                <select id="calendar-month" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white focus:border-[var(--primary)] focus:ring-[var(--primary)]">
+                    @foreach ([
+                        1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+                        5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+                        9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+                    ] as $num => $label)
+                        <option value="{{ $num }}" @selected($num === now()->month)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Año</label>
+                <input id="calendar-year" type="number" min="1900" max="2100" value="{{ now()->year }}" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-[var(--primary)] focus:ring-[var(--primary)]">
+            </div>
+            <div class="flex justify-end gap-2">
+                <button id="btn-calendar-cancel" class="px-4 py-2 rounded-full border border-gray-300 text-gray-700 bg-white hover:bg-gray-50">Cancelar</button>
+                <button id="btn-calendar-save" class="px-4 py-2 rounded-full border border-[var(--primary)] text-white bg-[var(--primary)] hover:brightness-110">Guardar</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -255,13 +312,36 @@ turnInputStyle.textContent = `
         font-size: 14px;
         color: #111827;
     }
+    .employee-select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background: transparent;
+        border: none;
+        outline: none;
+        width: 100%;
+        height: 100%;
+        padding: 0 6px;
+        font-size: 14px;
+        color: #111827;
+    }
+    .employee-select:disabled {
+        color: #9ca3af;
+    }
+    /* Oculta el ícono de desplegable en navegadores IE/Edge heredados */
+    select.employee-select::-ms-expand {
+        display: none;
+    }
 `;
 document.head.appendChild(turnInputStyle);
 
 // Control de turnos: crear/editar/eliminar y pintar celdas
-document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
     const turns = @json($turnData);
     const clients = @json($clients->map(fn($c) => ['id' => $c->id, 'name' => $c->business_name]));
+    const employeesByClient = @json($employeesByClient);
+    const dayNameCells = Array.from(document.querySelectorAll('[data-day-name]'));
+    const dayNumberCells = Array.from(document.querySelectorAll('[data-day-number]'));
 
     const modal = document.getElementById('turno-modal');
     const title = document.getElementById('turno-form-title');
@@ -303,6 +383,19 @@ document.addEventListener('DOMContentLoaded', () => {
     clientDropdown.className = 'turn-dropdown hidden';
     document.body.appendChild(clientDropdown);
     const clientInput = document.getElementById('client-input');
+    const employeeSelect = document.getElementById('employee-select');
+    const employeeDocCell = document.querySelector('[data-employee-doc]');
+    let selectedClientId = null;
+
+    // Calendario
+    const btnCalendar = document.getElementById('btn-calendar');
+    const calendarModal = document.getElementById('calendar-modal');
+    const calendarMonth = document.getElementById('calendar-month');
+    const calendarYear = document.getElementById('calendar-year');
+    const btnCalendarClose = document.getElementById('btn-calendar-close');
+    const btnCalendarCancel = document.getElementById('btn-calendar-cancel');
+    const btnCalendarSave = document.getElementById('btn-calendar-save');
+    const dayLabels = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'];
 
     const openModal = (mode) => {
         if (!modal) return;
@@ -491,25 +584,184 @@ document.addEventListener('DOMContentLoaded', () => {
         clientDropdown.classList.remove('hidden');
     };
 
+    const setEmployeeDoc = (value) => {
+        if (!employeeDocCell) return;
+        if (!value) {
+            employeeDocCell.innerHTML = '&nbsp;';
+            return;
+        }
+        employeeDocCell.textContent = value;
+    };
+
+    const renderEmployeeOptions = (clientId) => {
+        if (!employeeSelect) return;
+
+        selectedClientId = clientId || null;
+        const key = clientId !== null ? String(clientId) : null;
+        const list = key ? (employeesByClient[key] || []) : [];
+
+        employeeSelect.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = clientId ? 'Selecciona empleado' : 'Seleccione cliente';
+        placeholder.selected = true;
+        if (clientId) {
+            placeholder.disabled = true;
+        }
+        employeeSelect.appendChild(placeholder);
+        setEmployeeDoc('');
+
+        if (!clientId) {
+            employeeSelect.setAttribute('disabled', 'disabled');
+            return;
+        }
+
+        if (!list.length) {
+            const emptyOpt = document.createElement('option');
+            emptyOpt.value = '';
+            emptyOpt.textContent = 'Sin empleados para este cliente';
+            emptyOpt.disabled = true;
+            employeeSelect.appendChild(emptyOpt);
+            employeeSelect.setAttribute('disabled', 'disabled');
+            return;
+        }
+
+        employeeSelect.removeAttribute('disabled');
+        list.forEach(emp => {
+            const opt = document.createElement('option');
+            opt.value = emp.id;
+            opt.textContent = emp.name;
+            if (emp.document) opt.dataset.document = emp.document;
+            employeeSelect.appendChild(opt);
+        });
+    };
+
+    const syncClientFromInput = () => {
+        if (!clientInput) return;
+        const value = (clientInput.value || '').trim().toLowerCase();
+        const match = clients.find(c => (c.name || '').toLowerCase() === value);
+        if (match) {
+            clientInput.dataset.clientId = match.id;
+            renderEmployeeOptions(match.id);
+        } else {
+            clientInput.dataset.clientId = '';
+            renderEmployeeOptions(null);
+        }
+    };
+
     clientDropdown.addEventListener('mousedown', (e) => {
         const btn = e.target.closest('button[data-name]');
         if (!btn) return;
         e.preventDefault();
         const name = btn.dataset.name;
+        const id = btn.dataset.id;
         clientInput.value = name;
+        clientInput.dataset.clientId = id;
+        renderEmployeeOptions(id);
         hideClientDropdown();
     });
 
     if (clientInput) {
         clientInput.addEventListener('focus', () => showClientDropdown(clientInput));
         clientInput.addEventListener('click', () => showClientDropdown(clientInput));
-        clientInput.addEventListener('input', () => showClientDropdown(clientInput));
+        clientInput.addEventListener('input', () => {
+            showClientDropdown(clientInput);
+            syncClientFromInput();
+        });
+        clientInput.addEventListener('blur', syncClientFromInput);
     }
 
     document.addEventListener('click', (e) => {
         if (clientDropdown.contains(e.target) || e.target === clientInput) return;
         hideClientDropdown();
     });
+
+    employeeSelect?.addEventListener('change', () => {
+        if (!selectedClientId) {
+            setEmployeeDoc('');
+            return;
+        }
+        const selectedOpt = employeeSelect.options[employeeSelect.selectedIndex];
+        const docFromOpt = selectedOpt?.dataset?.document || '';
+        if (docFromOpt) {
+            setEmployeeDoc(docFromOpt);
+            return;
+        }
+        const key = String(selectedClientId);
+        const list = employeesByClient[key] || [];
+        const match = list.find(emp => String(emp.id) === employeeSelect.value);
+        setEmployeeDoc(match?.document || '');
+    });
+
+    const openCalendarModal = () => {
+        if (!calendarModal) return;
+        calendarModal.classList.remove('hidden');
+        calendarModal.classList.add('flex');
+    };
+
+    const closeCalendarModal = () => {
+        if (!calendarModal) return;
+        calendarModal.classList.add('hidden');
+        calendarModal.classList.remove('flex');
+    };
+
+    const fillCalendar = (month, year) => {
+        if (!dayNameCells.length || !dayNumberCells.length) return;
+        const safeMonth = Number(month);
+        const safeYear = Number(year);
+        if (!safeMonth || !safeYear) return;
+
+        const totalDays = new Date(safeYear, safeMonth, 0).getDate();
+
+        dayNameCells.forEach((cell, idx) => {
+            const dayNumber = idx + 1;
+            if (dayNumber <= totalDays) {
+                const date = new Date(safeYear, safeMonth - 1, dayNumber);
+                const label = dayLabels[date.getDay()] || '';
+                cell.textContent = label;
+            } else {
+                cell.innerHTML = '&nbsp;';
+            }
+        });
+
+        dayNumberCells.forEach((cell, idx) => {
+            const dayNumber = idx + 1;
+            if (dayNumber <= totalDays) {
+                cell.textContent = dayNumber;
+            } else {
+                cell.innerHTML = '&nbsp;';
+            }
+        });
+    };
+
+    btnCalendar?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openCalendarModal();
+    });
+
+    btnCalendarClose?.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeCalendarModal();
+    });
+
+    btnCalendarCancel?.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeCalendarModal();
+    });
+
+    calendarModal?.addEventListener('click', (e) => {
+        if (e.target === calendarModal) closeCalendarModal();
+    });
+
+    btnCalendarSave?.addEventListener('click', (e) => {
+        e.preventDefault();
+        const month = calendarMonth?.value || '';
+        const year = calendarYear?.value || '';
+        fillCalendar(month, year);
+        closeCalendarModal();
+    });
+
+    renderEmployeeOptions(null);
 });
 </script>
 @endsection

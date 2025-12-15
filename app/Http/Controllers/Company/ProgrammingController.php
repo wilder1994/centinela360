@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Employee;
 use App\Models\ProgrammingTurn;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -27,7 +28,14 @@ class ProgrammingController extends Controller
             ->orderBy('business_name')
             ->get(['id', 'business_name']);
 
-        return view('company.programming.create', compact('turns', 'clients', 'company'));
+        $employees = Employee::query()
+            ->where('company_id', $company->id)
+            ->withoutArchived()
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'client_id', 'first_name', 'last_name', 'document_number']);
+
+        return view('company.programming.create', compact('turns', 'clients', 'company', 'employees'));
     }
 
     public function store(Request $request)
