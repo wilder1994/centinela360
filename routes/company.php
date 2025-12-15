@@ -34,6 +34,8 @@ Route::middleware(['auth', 'role:Admin Empresa'])
         Route::get('programming', [ProgrammingController::class, 'index'])->name('programming.index');
         Route::get('programming/create', [ProgrammingController::class, 'create'])->name('programming.create');
         Route::post('programming', [ProgrammingController::class, 'store'])->name('programming.store');
+        Route::put('programming/{turn}', [ProgrammingController::class, 'update'])->name('programming.update');
+        Route::delete('programming/{turn}', [ProgrammingController::class, 'destroy'])->name('programming.destroy');
 
                 // ---- BASE DE DATOS - EMPLEADOS ----
         Route::prefix('employees')->name('employees.')->group(function () {

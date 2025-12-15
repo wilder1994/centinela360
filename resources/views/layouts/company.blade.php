@@ -15,14 +15,33 @@
         $company = auth()->user()->company;
         $primary = $company->color_primary ?? '#007bff';
         $secondary = $company->color_secondary ?? '#001f3f';
+        $text = $company->color_text ?? '#0f172a';
         $logo = $company->logo ? asset('storage/' . $company->logo) : asset('images/default-logo.png');
     @endphp
 
     <style>
-        :root { --primary: {{ $primary }}; --secondary: {{ $secondary }}; }
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1f2937; }
+        :root {
+            --primary: {{ $primary }};
+            --secondary: {{ $secondary }};
+            --text: {{ $text }};
+        }
 
-        .sidebar { width: 270px; background: linear-gradient(160deg, var(--secondary), #000000); color: white; height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: var(--text); }
+
+        .sidebar {
+            width: 270px;
+            background: linear-gradient(160deg, var(--secondary), var(--secondary));
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
         .sidebar .brand { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0.85rem; padding: 1.25rem 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
         .sidebar .brand-row { display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: space-between; }
         .sidebar .brand-left { display: flex; align-items: center; gap: 0.75rem; }
@@ -45,14 +64,14 @@
         .sidebar nav::-webkit-scrollbar { width: 6px; }
         .sidebar nav::-webkit-scrollbar-track { background: transparent; }
         .sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 999px; }
-        .sidebar nav a { display: flex; align-items: center; gap: 0.85rem; padding: 1rem 1.8rem; color: #e0e8f0; font-weight: 500; font-size: 0.95rem; transition: all 0.25s ease; text-decoration: none; }
+        .sidebar nav a { display: flex; align-items: center; gap: 0.85rem; padding: 1rem 1.8rem; color: #e0e8f0; font-weight: 500; font-size: 0.95rem; transition: all 0.25s ease; text-decoration: none; border-left: 4px solid transparent; }
         .sidebar nav a:hover, .sidebar nav a.active { background: rgba(255,255,255,0.12); color: #ffffff; border-left: 4px solid var(--primary); }
         .sidebar .icon-ghost, .sidebar .icon-safe { background: none !important; padding: 0 !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
         .sidebar .icon-ghost svg, .sidebar .icon-safe svg { width: 36px; height: 36px; }
 
-        .sidebar .footer { padding: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.75rem; text-align: center; opacity: 0.7; }
+        .sidebar .footer { padding: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.75rem; text-align: center; opacity: 0.8; color: #f3f4f6; }
         .main { margin-left: 270px; min-height: 100vh; display: flex; flex-direction: column; transition: all 0.3s ease; }
-        .content { padding: 2rem; background-color: #f8fafc; flex: 1; }
+        .content { padding: 2rem; background-color: #f8fafc; flex: 1; color: var(--text); }
     </style>
 </head>
 

@@ -4,6 +4,16 @@
 <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-md p-8 border border-gray-100">
     <h2 class="text-2xl font-semibold text-gray-800 mb-6">Editar usuario</h2>
 
+    @if ($errors->any())
+        <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg border border-red-200">
+            <ul class="list-disc pl-4 space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <form action="{{ route('admin.users.update', $user) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')

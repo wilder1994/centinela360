@@ -38,6 +38,12 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $messages = [
+            'photo.image' => 'Debes subir una imagen válida.',
+            'photo.mimes' => 'La foto debe ser JPG o PNG.',
+            'photo.max' => 'La foto no debe superar 2 MB.',
+        ];
+
         $validated = $request->validate([
             'name' => 'required|string|max:150',
             'email' => 'required|email|max:150|unique:users,email',
@@ -48,7 +54,7 @@ class UserController extends Controller
             'roles.*' => 'integer|exists:roles,id',
             'active' => 'boolean',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-        ]);
+        ], $messages);
 
         $photoPath = null;
         if ($request->hasFile('photo')) {
@@ -83,6 +89,12 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $messages = [
+            'photo.image' => 'Debes subir una imagen válida.',
+            'photo.mimes' => 'La foto debe ser JPG o PNG.',
+            'photo.max' => 'La foto no debe superar 2 MB.',
+        ];
+
         $validated = $request->validate([
             'name' => 'required|string|max:150',
             'email' => [
@@ -96,7 +108,7 @@ class UserController extends Controller
             'roles.*' => 'integer|exists:roles,id',
             'active' => 'nullable|boolean',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-        ]);
+        ], $messages);
 
         // 🔹 Guardar foto actual o reemplazar si hay nueva
         $photoPath = $user->photo;
