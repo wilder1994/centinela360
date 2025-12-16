@@ -25,6 +25,7 @@ class ProgrammingController extends Controller
 
         $clients = Client::query()
             ->where('company_id', $company->id)
+            ->with(['services:id,client_id,service_type,service_schedule'])
             ->orderBy('business_name')
             ->get(['id', 'business_name']);
 
